@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 1 (Sprint 2 완료)
+> 현재 Phase: 2 (Sprint 3 완료)
 
 ---
 
@@ -9,7 +9,7 @@
 
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
-Phase 2: 아카이브 엔진  [ ] 0/4 sprint
+Phase 2: 아카이브 엔진  [~] 1/4 sprint (Sprint 3 완료)
 Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
 Phase 4: 세션 스토리지   [ ] 0/3 sprint
 Phase 5: Swift FFI     [ ] 0/3 sprint
@@ -44,12 +44,13 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 
 ## Phase 2: 아카이브 엔진
 
-### Sprint 3: ZIP/CBZ
-- [ ] `ArchiveReader` trait 정의
-- [ ] `ZipArchive` 구현 (`zip` 크레이트)
-- [ ] 엔트리 목록 + 자연 정렬
-- [ ] 파일명 인코딩 자동 감지 (`chardet` 크레이트)
-- [ ] 단위 테스트: 엔트리 목록, 엔트리 읽기, 정렬 순서
+### Sprint 3: Phase 2 내실화 ✅ (2026-06-01)
+- [x] `PartialReader` — `read_first_image()` (DTPartialArchiveParser 이식): ZIP/TAR/7z/folder 4가지 경로
+- [x] `RarArchive` — unrar-ng 0.7 typestate cursor API, `.rar`/`.cbr` 라우팅
+- [x] 7z 픽스처 (`make_sevenz`) + 통합 테스트 (목록, 읽기)
+- [x] 폴더 픽스처 (`make_folder`) + 통합 테스트 (목록, 읽기)
+- [x] PartialReader 통합 테스트 4개 (CBZ/TAR.GZ/folder/7z 첫 이미지 추출)
+- [x] 커밋: 8ac7425
 
 ### Sprint 4: RAR/CBR + TAR 계열
 - [ ] `RarArchive` 구현 (compress-tools via libarchive)
@@ -252,6 +253,23 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 
 **학습:** `#[cfg(test)]`로 게이트한 `src/` 모듈은 `tests/` 통합 테스트에서 접근 불가 → `tests/common/mod.rs` 패턴 사용
 
+### Sprint 3 — Phase 2 내실화 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 34 pass / 0 fail (14 unit + 12 integration + 1 doctest + 7 other) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 8ac7425 |
+
+**추가된 내용:**
+- `partial_reader.rs`: `read_first_image()` — 모든 포맷 최적화 첫 이미지 추출
+- `rar_archive.rs`: unrar-ng 0.7 RarArchive (typestate cursor pattern)
+- `tests/common/mod.rs` 픽스처 확장: `make_folder`, `make_sevenz`
+- 통합 테스트 8개 추가: folder(2), 7z(2), PartialReader(4)
+
+**결정:** PLAN.md의 `compress-tools`로 RAR 계획을 `unrar-ng`로 변경 — libarchive가 brew 설치됐지만 pkg-config 미등록이라 cross-compile 불안정. unrar-ng는 C++ 소스 번들로 의존성 없음.
+
 ---
 
 ## 결정 기록
@@ -260,7 +278,7 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 |------|------|------|
 | 2026-06-01 | 하이브리드 아키텍처 채택 | macOS UI 바인딩 미성숙, 점진적 교체 가능 |
 | 2026-06-01 | uniffi로 Swift 바인딩 | Mozilla 검증, Swift Package 통합 용이 |
-| 2026-06-01 | compress-tools로 RAR | unrar 크레이트 라이선스 문제 우회 |
+| 2026-06-01 | unrar-ng로 RAR (compress-tools 계획 변경) | libarchive pkg-config 미등록, cross-compile 불안정 |
 | 2026-06-01 | Vision 프레임워크 Swift 유지 | macOS 전용, Rust 바인딩 없음 |
 
 ---
