@@ -210,3 +210,25 @@ fn folder_empty_directory_has_no_entries() {
     let reader = open_archive(dir.path()).expect("open_archive failed for empty folder");
     assert_eq!(reader.entries().len(), 0);
 }
+
+// ---------------------------------------------------------------------------
+// PartialReader TAR.BZ2 and TAR.XZ tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn partial_reader_tar_bz2_first_image() {
+    use sc_archive::read_first_image;
+    let (tmp, _names) = common::make_tar_bz2(3);
+    let bytes = read_first_image(tmp.path()).expect("read_first_image failed");
+    assert!(!bytes.is_empty());
+    assert_eq!(&bytes[0..4], &[0x89, 0x50, 0x4E, 0x47], "not PNG magic");
+}
+
+#[test]
+fn partial_reader_tar_xz_first_image() {
+    use sc_archive::read_first_image;
+    let (tmp, _names) = common::make_tar_xz(3);
+    let bytes = read_first_image(tmp.path()).expect("read_first_image failed");
+    assert!(!bytes.is_empty());
+    assert_eq!(&bytes[0..4], &[0x89, 0x50, 0x4E, 0x47], "not PNG magic");
+}
