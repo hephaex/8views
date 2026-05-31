@@ -5,6 +5,7 @@ use sc_image::{
     cache::ImageCache,
     compositor::Compositor,
     scale::{scale_image, ScaleOptions},
+    thumbnail::{generate_thumbnails_sorted, ThumbnailSpec},
 };
 
 /// 800x1200 세로형 이미지를 1024x768 윈도우에 FitWindow 스케일링하는 속도를 측정한다.
@@ -79,10 +80,93 @@ fn bench_image_cache_insert_evict(c: &mut Criterion) {
     group.finish();
 }
 
+/// 지정된 개수의 PNG 이미지 바이트를 생성한다.
+/// 각 이미지는 valid한 1×1 RGB PNG이다.
+fn create_image_entries(count: usize) -> Vec<(usize, Vec<u8>)> {
+    (0..count)
+        .map(|i| {
+            let img = DynamicImage::new_rgb8(64, 64);
+            let mut buf = Vec::new();
+            img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png)
+                .expect("failed to encode image");
+            (i, buf)
+        })
+        .collect()
+}
+
+/// rayon으로 10개 이미지의 썸네일을 병렬 생성하는 속도를 측정한다.
+/// generate_thumbnails_sorted()를 사용하여 결과가 원래 순서대로 정렬되는지 확인한다.
+fn bench_thumbnail_parallel_10(c: &mut Criterion) {
+    let entries = black_box(create_image_entries(10));
+    let spec = black_box(ThumbnailSpec::default());
+
+    let mut group = c.benchmark_group("thumbnail_parallel");
+
+    group.bench_function("parallel_10_entries", |b| {
+        b.iter(|| {
+            black_box(generate_thumbnails_sorted(
+                black_box(&entries),
+                black_box(spec),
+            ))
+        });
+    });
+
+    group.finish();
+}
+
+/// rayon으로 50개 이미지의 썸네일을 병렬 생성하는 속도를 측정한다.
+/// 병렬 처리의 이점이 명확해지는 데이터 크기이다.
+fn bench_thumbnail_parallel_50(c: &mut Criterion) {
+    let entries = black_box(create_image_entries(50));
+    let spec = black_box(ThumbnailSpec::default());
+
+    let mut group = c.benchmark_group("thumbnail_parallel");
+
+    group.bench_function("parallel_50_entries", |b| {
+        b.iter(|| {
+            black_box(generate_thumbnails_sorted(
+                black_box(&entries),
+                black_box(spec),
+            ))
+        });
+    });
+
+    group.finish();
+}
+
+/// 50개 이미지의 썸네일을 순서대로(serial) 생성하고, 병렬 버전과 비교한다.
+/// 이 벤치마크는 rayon 파이프라인의 오버헤드를 측정한다.
+fn bench_thumbnail_serial_50_comparison(c: &mut Criterion) {
+    let entries = black_box(create_image_entries(50));
+    let spec = black_box(ThumbnailSpec::default());
+
+    let mut group = c.benchmark_group("thumbnail_serial_vs_parallel");
+
+    group.bench_function("serial_50_entries", |b| {
+        b.iter(|| {
+            // 순차 처리: par_iter() 대신 iter() 사용
+            let results: Vec<(usize, DynamicImage)> = entries
+                .iter()
+                .filter_map(|(idx, bytes)| {
+                    let img = image::load_from_memory(bytes).ok()?;
+                    let thumb = sc_image::thumbnail::generate_thumbnail(&img, spec);
+                    Some((*idx, thumb))
+                })
+                .collect();
+            black_box(results)
+        });
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_scale_fit_window,
     bench_compositor_two_page,
-    bench_image_cache_insert_evict
+    bench_image_cache_insert_evict,
+    bench_thumbnail_parallel_10,
+    bench_thumbnail_parallel_50,
+    bench_thumbnail_serial_50_comparison
 );
 criterion_main!(benches);

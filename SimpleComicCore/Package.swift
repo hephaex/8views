@@ -42,6 +42,11 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("simplecomic", .when(platforms: [.macOS])),
                 .unsafeFlags(["-L", "\(Context.packageDirectory)/Libraries"]),
+                // Transitive C/system dependencies of libsimplecomic.a
+                .linkedLibrary("bz2"),       // bzip2 — TAR.BZ2 support (macOS SDK)
+                .linkedLibrary("lzma"),      // XZ — TAR.XZ support (Homebrew)
+                .linkedLibrary("c++"),       // C++ stdlib — unrar-ng (bundled C++ source)
+                .unsafeFlags(["-L/opt/homebrew/lib"]),  // Homebrew lib path for liblzma
                 // Rust stdlib and system frameworks required by libsimplecomic.a
                 .linkedLibrary("resolv"),
                 .linkedFramework("Security"),

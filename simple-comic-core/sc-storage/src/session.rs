@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::migration::run_migrations;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionState {
     pub page_index: usize,
     pub zoom_level: f64,
@@ -15,6 +15,21 @@ pub struct SessionState {
     pub scale_mode: ScaleMode,
     pub scroll_x: f64,
     pub scroll_y: f64,
+}
+
+impl Default for SessionState {
+    fn default() -> Self {
+        Self {
+            page_index: 0,
+            zoom_level: 1.0, // 100% zoom
+            rotation: Rotation::default(),
+            two_page_spread: false,
+            page_order: PageOrder::default(),
+            scale_mode: ScaleMode::default(),
+            scroll_x: 0.0,
+            scroll_y: 0.0,
+        }
+    }
 }
 
 pub struct SessionManager {

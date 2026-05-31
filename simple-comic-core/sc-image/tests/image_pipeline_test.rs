@@ -1,6 +1,7 @@
 use image::DynamicImage;
-use sc_core::types::ScaleMode;
+use sc_core::types::{Rotation, ScaleMode};
 use sc_image::{
+    apply_rotation,
     cache::ImageCache,
     compositor::Compositor,
     loader::ImageLoader,
@@ -175,5 +176,43 @@ fn cache_evicts_on_overflow() {
         cache.len(),
         3,
         "LRU cache with capacity 3 must hold exactly 3 entries after 4 inserts"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Rotation tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn rotate_90_loads_and_rotates() {
+    let (img, _meta) = ImageLoader::load_bytes(MINIMAL_PNG, "rot90.png", 0)
+        .expect("load_bytes must succeed for valid PNG");
+    // 1×1 is square — rotating 90° leaves dimensions unchanged.
+    let out = apply_rotation(img, Rotation::R90);
+    assert_eq!(out.width(), 1, "1x1 rotated 90° must remain width 1");
+    assert_eq!(out.height(), 1, "1x1 rotated 90° must remain height 1");
+}
+
+#[test]
+fn rotate_180_preserves_dimensions() {
+    let img = DynamicImage::new_rgb8(100, 200);
+    let out = apply_rotation(img, Rotation::R180);
+    assert_eq!(out.width(), 100, "R180 must preserve width");
+    assert_eq!(out.height(), 200, "R180 must preserve height");
+}
+
+#[test]
+fn rotate_270_swaps_on_non_square() {
+    let img = DynamicImage::new_rgb8(100, 200);
+    let out = apply_rotation(img, Rotation::R270);
+    assert_eq!(
+        out.width(),
+        200,
+        "R270 must swap: width becomes original height"
+    );
+    assert_eq!(
+        out.height(),
+        100,
+        "R270 must swap: height becomes original width"
     );
 }

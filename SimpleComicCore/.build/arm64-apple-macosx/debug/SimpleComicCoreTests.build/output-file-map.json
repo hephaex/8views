@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/master.swiftdeps"
+  },
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Tests/SimpleComicCoreTests/SimpleComicCoreTests.swift": {
+    "dependencies": "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.d",
+    "object": "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.swift.o",
+    "swiftmodule": "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.swiftdeps",
+    "diagnostics": "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.dia"
+  }
+}

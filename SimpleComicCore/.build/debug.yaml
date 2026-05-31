@@ -1,0 +1,121 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "SimpleComicCore-arm64-apple-macosx26.0-debug.module": ["<SimpleComicCore-arm64-apple-macosx26.0-debug.module>"]
+  "SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.module": ["<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.module>"]
+  "SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.test": ["<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.test>"]
+  "SimpleComicCoreTests-arm64-apple-macosx26.0-debug.module": ["<SimpleComicCoreTests-arm64-apple-macosx26.0-debug.module>"]
+  "main": ["<SimpleComicCore-arm64-apple-macosx26.0-debug.module>","<simplecomicFFI-arm64-apple-macosx26.0-debug.module>"]
+  "simplecomicFFI-arm64-apple-macosx26.0-debug.module": ["<simplecomicFFI-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<SimpleComicCore-arm64-apple-macosx26.0-debug.module>","<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.test>","<SimpleComicCoreTests-arm64-apple-macosx26.0-debug.module>","<simplecomicFFI-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/SimpleComicCore/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Tests/SimpleComicCoreTests/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/SimpleComicCore/simplecomic.swift"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/sources"]
+    description: "Write auxiliary file /Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/sources"
+
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.derived/runner.swift"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/sources"]
+    description: "Write auxiliary file /Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/sources"
+
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.derived/runner.swift":
+    tool: test-entry-point-tool
+    inputs: []
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.derived/runner.swift"]
+
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/simplecomic.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/runner.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.swift.o"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.product/Objects.LinkFileList"
+
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Tests/SimpleComicCoreTests/SimpleComicCoreTests.swift"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/sources"]
+    description: "Write auxiliary file /Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/sources"
+
+  "/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+
+  "<SimpleComicCore-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/simplecomic.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCore.swiftmodule"]
+    outputs: ["<SimpleComicCore-arm64-apple-macosx26.0-debug.module>"]
+
+  "<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/runner.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCorePackageTests.swiftmodule"]
+    outputs: ["<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.module>"]
+
+  "<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.test>":
+    tool: phony
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.xctest/Contents/MacOS/SimpleComicCorePackageTests"]
+    outputs: ["<SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.test>"]
+
+  "<SimpleComicCoreTests-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCoreTests.swiftmodule"]
+    outputs: ["<SimpleComicCoreTests-arm64-apple-macosx26.0-debug.module>"]
+
+  "<simplecomicFFI-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: []
+    outputs: ["<simplecomicFFI-arm64-apple-macosx26.0-debug.module>"]
+
+  "C.SimpleComicCore-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/SimpleComicCore/simplecomic.swift","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/sources"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/simplecomic.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCore.swiftmodule"]
+    description: "Compiling Swift Module 'SimpleComicCore' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","SimpleComicCore","-emit-dependencies","-emit-module","-emit-module-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCore.swiftmodule","-output-file-map","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/sources","-I","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx12.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-Xcc","-fmodule-map-file=/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI/module.modulemap","-Xcc","-I","-Xcc","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI","-module-cache-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/include/SimpleComicCore-Swift.h","-swift-version","5","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","simplecomiccore"]
+
+  "C.SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.derived/runner.swift","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCoreTests.swiftmodule","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/sources"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/runner.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCorePackageTests.swiftmodule"]
+    description: "Compiling Swift Module 'SimpleComicCorePackageTests' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","SimpleComicCorePackageTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCorePackageTests.swiftmodule","-output-file-map","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/sources","-I","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx12.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-Xcc","-fmodule-map-file=/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI/module.modulemap","-Xcc","-I","-Xcc","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI","-module-cache-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/include/SimpleComicCorePackageTests-Swift.h","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","simplecomiccore"]
+
+  "C.SimpleComicCorePackageTests-arm64-apple-macosx26.0-debug.test":
+    tool: shell
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCore.build/simplecomic.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.build/runner.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.product/Objects.LinkFileList"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.xctest/Contents/MacOS/SimpleComicCorePackageTests"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.xctest/Contents/MacOS/SimpleComicCorePackageTests"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-L","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug","-o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.xctest/Contents/MacOS/SimpleComicCorePackageTests","-module-name","SimpleComicCorePackageTests","-Xlinker","-no_warn_duplicate_libraries","-Xlinker","-bundle","-Xlinker","-rpath","-Xlinker","@loader_path/../../../","@/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCorePackageTests.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx14.0","-lsimplecomic","-lbz2","-llzma","-lc++","-lresolv","-framework","Security","-framework","CoreFoundation","-L","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Libraries","-L/opt/homebrew/lib","-Xlinker","-add_ast_path","-Xlinker","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCore.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCorePackageTests.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCoreTests.swiftmodule","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
+
+  "C.SimpleComicCoreTests-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Tests/SimpleComicCoreTests/SimpleComicCoreTests.swift","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCore.swiftmodule","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/sources"]
+    outputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/SimpleComicCoreTests.swift.o","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCoreTests.swiftmodule"]
+    description: "Compiling Swift Module 'SimpleComicCoreTests' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","SimpleComicCoreTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules/SimpleComicCoreTests.swiftmodule","-output-file-map","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/SimpleComicCoreTests.build/sources","-I","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-Xcc","-fmodule-map-file=/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI/module.modulemap","-Xcc","-I","-Xcc","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI","-module-cache-path","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","5","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","simplecomiccore"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/SimpleComicCore/","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Sources/simplecomicFFI/","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Tests/SimpleComicCoreTests/","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Package.swift","/Users/mare/Simon/8/Simple-Comic/SimpleComicCore/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+
