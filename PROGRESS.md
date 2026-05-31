@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 7 완료 (Swift 바인딩 생성 + 이미지 파이프라인 시작)
+> 현재 Phase: Sprint 8 완료 (Swift XCTest 통과 + Rotation + 이미지 벤치마크)
 
 ---
 
@@ -10,8 +10,8 @@
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
 Phase 2: 아카이브 엔진  [x] 4/4 sprint (완료)
-Phase 3: 이미지 파이프라인 [~] 1/4 sprint (Sprint 7 — 통합 테스트)
-Phase 5: Swift FFI     [~] 2/3 sprint (Sprint 6+7 — uniffi + Swift Package)
+Phase 3: 이미지 파이프라인 [~] 2/4 sprint (Sprint 8 — rotation + benchmark)
+Phase 5: Swift FFI     [x] 3/3 sprint (Sprint 6+7+8 — 완료)
 Phase 6: UI 배선        [ ] 0/6 sprint
 Phase 7: OCR 통합       [ ] 0/2 sprint
 Phase 8: QuickLook     [ ] 0/2 sprint
@@ -88,11 +88,15 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] `thumbnail.rs`: `ThumbnailGenerator` — rayon par_iter 병렬, sorted stable 출력
 - [x] 커밋: 3f18285
 
-### Sprint 8: 스케일링 + 회전
-- [ ] 스케일 모드: original, fit-window, fit-width
-- [ ] 회전: 0/90/180/270도
-- [ ] 고품질 다운샘플링 (Lanczos/Mitchell)
-- [ ] 단위 테스트: 각 모드 출력 크기 검증
+### Sprint 8: Swift XCTest 통과 + Rotation + 벤치마크 ✅ (2026-06-01)
+- [x] Package.swift 링커 수정 — libbz2 + liblzma(Homebrew) + libc++ 추가
+- [x] Swift XCTest 4/4 통과 (version, archive_err, session_default, session_CRUD)
+- [x] `SessionState::default()` zoom_level 0.0 → 1.0 수정
+- [x] `rotate.rs`: `apply_rotation()` + `scale_then_rotate()` — R90/R180/R270
+  - 8개 테스트 (5 unit + 3 integration)
+- [x] sc-image 벤치마크: thumbnail parallel 10/50 + serial 50 비교
+- [x] SimpleComicCore .gitignore 추가 (.build/ 제외)
+- [x] 커밋: 295be1e, d37108f
 
 ### Sprint 9: 두 페이지 합성 + 썸네일
 - [ ] `Compositor`: 두 이미지 side-by-side 합성
@@ -355,6 +359,22 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - ThumbnailGenerator: rayon 병렬, Lanczos3, stable 정렬 출력
 
 **부수 수정:** MINIMAL_PNG 상수의 잘못된 CRC → image 크레이트의 strict PNG 검증 통과
+
+### Sprint 8 — Swift XCTest + Rotation + 벤치마크 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 87 pass / 0 fail (+10 신규) |
+| Swift XCTest | 4/4 pass |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 295be1e + d37108f |
+
+**핵심 성과:**
+- Swift FFI Phase 5 완료 (3/3 sprint) — Xcode 통합 준비 100%
+- 링커 이슈 해결: libbz2(SDK) + liblzma(Homebrew) + libc++(C++) 명시적 링킹
+- rotation 파이프라인: RGBA 통일 변환 후 imageops rotate90/180/270 적용
+- `zoom_level` 기본값 0.0→1.0 수정 (세션 미존재 시 올바른 100% 줌 반환)
 
 ---
 
