@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 2 (Sprint 3 완료)
+> 현재 Phase: 2 (Sprint 4 완료)
 
 ---
 
@@ -9,7 +9,7 @@
 
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
-Phase 2: 아카이브 엔진  [~] 1/4 sprint (Sprint 3 완료)
+Phase 2: 아카이브 엔진  [~] 2/4 sprint (Sprint 4 완료)
 Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
 Phase 4: 세션 스토리지   [ ] 0/3 sprint
 Phase 5: Swift FFI     [ ] 0/3 sprint
@@ -52,11 +52,11 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] PartialReader 통합 테스트 4개 (CBZ/TAR.GZ/folder/7z 첫 이미지 추출)
 - [x] 커밋: 8ac7425
 
-### Sprint 4: RAR/CBR + TAR 계열
-- [ ] `RarArchive` 구현 (compress-tools via libarchive)
-- [ ] `TarArchive` 구현 (gz, bz2, xz)
-- [ ] 중첩 아카이브 재귀 탐색
-- [ ] 단위 테스트: RAR/TAR 파일 읽기
+### Sprint 4: TAR 변형 + 엣지케이스 + 벤치마크 ✅ (2026-06-01)
+- [x] TAR.BZ2 + TAR.XZ 픽스처(`make_tar_bz2`, `make_tar_xz`) + 통합 테스트 4개
+- [x] 엣지케이스 5개: 빈 아카이브, 비이미지 필터링, 혼합 필터링, 없는 경로, 빈 폴더
+- [x] 아카이브 벤치마크 기준선: `cbz_open_and_list_50pages`, `cbz_read_first_image_50pages`
+- [x] 커밋: 5e13d92
 
 ### Sprint 5: 7z + 폴더 지원
 - [ ] `SevenZipArchive` 구현 (`sevenz-rust` 크레이트)
@@ -280,6 +280,20 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 | 2026-06-01 | uniffi로 Swift 바인딩 | Mozilla 검증, Swift Package 통합 용이 |
 | 2026-06-01 | unrar-ng로 RAR (compress-tools 계획 변경) | libarchive pkg-config 미등록, cross-compile 불안정 |
 | 2026-06-01 | Vision 프레임워크 Swift 유지 | macOS 전용, Rust 바인딩 없음 |
+
+### Sprint 4 — TAR 변형 + 엣지케이스 + 벤치마크 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 43 pass / 0 fail (+9 신규) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 5e13d92 |
+
+**추가된 내용:**
+- 픽스처: `make_tar_bz2`, `make_tar_xz` → TAR 변형 전체 커버
+- 엣지케이스 테스트 5개: 빈/비이미지/혼합/없는경로/빈폴더
+- 벤치마크: 50페이지 CBZ open+list, PartialReader 기준선
 
 ---
 
