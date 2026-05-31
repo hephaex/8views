@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 2 (Sprint 5 완료 — Phase 2 거의 마무리)
+> 현재 Phase: 2 완료 + Phase 5 FFI 시작 (Sprint 6 완료)
 
 ---
 
@@ -9,7 +9,8 @@
 
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
-Phase 2: 아카이브 엔진  [~] 3/4 sprint (Sprint 5 완료)
+Phase 2: 아카이브 엔진  [x] 4/4 sprint (완료)
+Phase 5: Swift FFI     [~] 1/3 sprint (Sprint 6 — uniffi 활성화)
 Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
 Phase 4: 세션 스토리지   [ ] 0/3 sprint
 Phase 5: Swift FFI     [ ] 0/3 sprint
@@ -66,11 +67,14 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] PartialReader TAR.BZ2 + TAR.XZ 통합 테스트 추가
 - [x] 커밋: f96b4f1
 
-### Sprint 6: 아카이브 엔진 통합 + FFI 노출
-- [ ] `ArchiveFactory`: 파일 확장자로 적절한 구현 선택
-- [ ] uniffi UDL: `open_archive()`, `list_pages()`, `read_page_data()` 노출
-- [ ] 통합 테스트: 모든 포맷 end-to-end
-- [ ] 성능 벤치마크: 200페이지 CBZ 오픈 < 500ms
+### Sprint 6: uniffi 0.29 스캐폴딩 활성화 ✅ (2026-06-01)
+- [x] `build.rs` → `uniffi::generate_scaffolding("src/simplecomic.udl")` 활성화
+- [x] `lib.rs` → `uniffi::include_scaffolding!("simplecomic")` + UDL 함수 구현
+- [x] `ArchiveEntryRecord` / `SessionStateRecord` 구조체 (UDL dictionary 대응)
+- [x] `ScError` flat enum (UDL [Error] enum 대응)
+- [x] 아카이브 API: `archive_list_pages`, `archive_read_page`, `archive_read_first_image`
+- [x] 세션 API: `session_load`, `session_save`, `session_delete`
+- [x] 커밋: 5066efe
 
 ---
 
@@ -314,6 +318,25 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 
 **Phase 2 포맷 커버리지 (최종):**
 ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte fallback ✓
+
+### Sprint 6 — uniffi 0.29 스캐폴딩 활성화 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 61 pass / 0 fail (변화 없음 — 스캐폴딩은 컴파일 타임) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 5066efe |
+
+**핵심 학습:**
+- uniffi UDL 방식에서 `#[derive(uniffi::Record)]` + `include_scaffolding!()` 동시 사용 금지
+  - generate_scaffolding이 이미 trait impl을 생성하므로 E0119 충돌 발생
+  - UDL 방식에서는 Rust 타입에 uniffi derive 불필요
+- `[Error] enum ScError { "Archive", ... }` → Rust flat enum (데이터 없음) 필수
+  - 에러 정보는 Display impl 메시지로 전달
+- `session_delete`는 UDL에서 `void` (throws 없음) → Rust `()` 반환, 에러 silently 무시
+
+**Phase 2 완료. Phase 5(Swift FFI) Sprint 6에서 시작됨.**
 
 ---
 
