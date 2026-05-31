@@ -80,8 +80,3 @@ impl ArchiveReader for ZipArchive {
         anyhow::bail!("entry not found in zip: {}", filename)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    // Integration tests will be added in Sprint 3 with fixture files.
-}

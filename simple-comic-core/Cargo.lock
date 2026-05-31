@@ -1720,6 +1720,7 @@ dependencies = [
  "serde",
  "sevenz-rust",
  "tar",
+ "tempfile",
  "thiserror",
  "tracing",
  "xz2",
