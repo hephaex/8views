@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 2 (Sprint 4 완료)
+> 현재 Phase: 2 (Sprint 5 완료 — Phase 2 거의 마무리)
 
 ---
 
@@ -9,7 +9,7 @@
 
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
-Phase 2: 아카이브 엔진  [~] 2/4 sprint (Sprint 4 완료)
+Phase 2: 아카이브 엔진  [~] 3/4 sprint (Sprint 5 완료)
 Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
 Phase 4: 세션 스토리지   [ ] 0/3 sprint
 Phase 5: Swift FFI     [ ] 0/3 sprint
@@ -58,11 +58,13 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] 아카이브 벤치마크 기준선: `cbz_open_and_list_50pages`, `cbz_read_first_image_50pages`
 - [x] 커밋: 5e13d92
 
-### Sprint 5: 7z + 폴더 지원
-- [ ] `SevenZipArchive` 구현 (`sevenz-rust` 크레이트)
-- [ ] `FolderReader` 구현 (이미지 파일만 필터링)
-- [ ] `PartialReader`: 첫 이미지만 추출 (QuickLook용)
-- [ ] 단위 테스트: 7z, 폴더 열기
+### Sprint 5: Phase 2 내실화 + FFI 준비 ✅ (2026-06-01)
+- [x] `detect.rs`: magic byte 기반 포맷 탐지 (ZIP/7z/RAR/TAR.gz/bz2/xz) + 8개 단위 테스트
+  - `open_archive()` fallback — 확장자 없거나 잘못된 파일 자동 탐지
+- [x] `simplecomic.udl`: uniffi 인터페이스 스켈레톤 (archive 3 + session 3 + util)
+- [x] `sc-ffi/src/lib.rs`: 타입 검증 스텁 7개 (Sprint 6 scaffolding 전환 준비)
+- [x] PartialReader TAR.BZ2 + TAR.XZ 통합 테스트 추가
+- [x] 커밋: f96b4f1
 
 ### Sprint 6: 아카이브 엔진 통합 + FFI 노출
 - [ ] `ArchiveFactory`: 파일 확장자로 적절한 구현 선택
@@ -294,6 +296,24 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - 픽스처: `make_tar_bz2`, `make_tar_xz` → TAR 변형 전체 커버
 - 엣지케이스 테스트 5개: 빈/비이미지/혼합/없는경로/빈폴더
 - 벤치마크: 50페이지 CBZ open+list, PartialReader 기준선
+
+### Sprint 5 — Phase 2 내실화 + FFI 준비 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 61 pass / 0 fail (+18 신규) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | f96b4f1 |
+
+**추가된 내용:**
+- `detect.rs`: 매직 바이트 탐지 — ZIP/7z/RAR/TarGz/TarBz2/TarXz 6종, 단위 테스트 8개
+- `simplecomic.udl`: uniffi 인터페이스 8개 함수, 2개 dictionary, 1개 error enum
+- `sc-ffi/src/lib.rs`: 타입 경계 검증 스텁 + 단위 테스트 7개 (Sprint 6 scaffolding 준비)
+- PartialReader TAR.BZ2/XZ 통합 테스트 2개
+
+**Phase 2 포맷 커버리지 (최종):**
+ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte fallback ✓
 
 ---
 
