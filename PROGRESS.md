@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 2 완료 + Phase 5 FFI 시작 (Sprint 6 완료)
+> 현재 Phase: Sprint 7 완료 (Swift 바인딩 생성 + 이미지 파이프라인 시작)
 
 ---
 
@@ -10,10 +10,8 @@
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
 Phase 2: 아카이브 엔진  [x] 4/4 sprint (완료)
-Phase 5: Swift FFI     [~] 1/3 sprint (Sprint 6 — uniffi 활성화)
-Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
-Phase 4: 세션 스토리지   [ ] 0/3 sprint
-Phase 5: Swift FFI     [ ] 0/3 sprint
+Phase 3: 이미지 파이프라인 [~] 1/4 sprint (Sprint 7 — 통합 테스트)
+Phase 5: Swift FFI     [~] 2/3 sprint (Sprint 6+7 — uniffi + Swift Package)
 Phase 6: UI 배선        [ ] 0/6 sprint
 Phase 7: OCR 통합       [ ] 0/2 sprint
 Phase 8: QuickLook     [ ] 0/2 sprint
@@ -80,12 +78,15 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 
 ## Phase 3: 이미지 파이프라인
 
-### Sprint 7: 기본 이미지 로딩
-- [ ] `ImageLoader`: JPEG/PNG/GIF/BMP/TIFF 로딩
-- [ ] WebP 지원 (`webp` 크레이트)
-- [ ] 이미지 메타데이터: 너비, 높이, aspect ratio
-- [ ] LRU 캐시 (`lru` 크레이트, 최대 50개 페이지)
-- [ ] 단위 테스트: 각 포맷 로딩, 캐시 히트/미스
+### Sprint 7: Swift 바인딩 + 이미지 파이프라인 ✅ (2026-06-01)
+- [x] `tools/uniffi-bindgen`: workspace binary crate (cargo run --bin uniffi-bindgen)
+- [x] Swift 바인딩 생성: `simplecomic.swift` 1,084줄, `simplecomicFFI.h`, `module.modulemap`
+- [x] `SimpleComicCore/` Swift Package: Package.swift + Universal lib (15MB)
+  - XCTest 4개: version, archive_missing, session_default, session_CRUD
+- [x] sc-image 통합 테스트 10개: load, scale 3종, compositor 2종, cache 2종, roundtrip
+  - MINIMAL_PNG CRC 수정 (image 크레이트 strict PNG 검증)
+- [x] `thumbnail.rs`: `ThumbnailGenerator` — rayon par_iter 병렬, sorted stable 출력
+- [x] 커밋: 3f18285
 
 ### Sprint 8: 스케일링 + 회전
 - [ ] 스케일 모드: original, fit-window, fit-width
@@ -337,6 +338,23 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - `session_delete`는 UDL에서 `void` (throws 없음) → Rust `()` 반환, 에러 silently 무시
 
 **Phase 2 완료. Phase 5(Swift FFI) Sprint 6에서 시작됨.**
+
+### Sprint 7 — Swift 바인딩 + 이미지 파이프라인 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 77 pass / 0 fail (+16 신규) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 3f18285 |
+
+**추가된 내용:**
+- uniffi-bindgen workspace binary → Swift 바인딩 생성 파이프라인 확립
+- SimpleComicCore Swift Package (SPM) — Xcode 통합 준비 완료
+- sc-image 통합 테스트 10개 (실제 PNG 바이트 기반)
+- ThumbnailGenerator: rayon 병렬, Lanczos3, stable 정렬 출력
+
+**부수 수정:** MINIMAL_PNG 상수의 잘못된 CRC → image 크레이트의 strict PNG 검증 통과
 
 ---
 
