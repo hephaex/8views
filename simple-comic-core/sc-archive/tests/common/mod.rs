@@ -162,3 +162,69 @@ pub fn make_sevenz(page_count: usize) -> (tempfile::TempDir, tempfile::NamedTemp
 
     (stage, tmp_7z, names)
 }
+
+/// Create a temporary TAR.BZ2 file containing `page_count` 1×1 PNG images.
+///
+/// Files are named `page001.png` … `pageNNN.png`.
+///
+/// # Returns
+///
+/// `(NamedTempFile, filenames_in_insertion_order)`.
+pub fn make_tar_bz2(page_count: usize) -> (tempfile::NamedTempFile, Vec<String>) {
+    let tmp = tempfile::Builder::new()
+        .suffix(".tar.bz2")
+        .tempfile()
+        .expect("failed to create temp tar.bz2");
+
+    let file = tmp.reopen().expect("failed to reopen temp tar.bz2");
+    let encoder = bzip2::write::BzEncoder::new(file, bzip2::Compression::default());
+    let mut tar = tar::Builder::new(encoder);
+
+    let mut names = Vec::with_capacity(page_count);
+    for i in 1..=page_count {
+        let name = page_name(i);
+        let mut header = tar::Header::new_gnu();
+        header.set_size(MINIMAL_PNG.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        tar.append_data(&mut header, &name, MINIMAL_PNG)
+            .expect("tar append_data");
+        names.push(name);
+    }
+    tar.finish().expect("tar finish");
+
+    (tmp, names)
+}
+
+/// Create a temporary TAR.XZ file containing `page_count` 1×1 PNG images.
+///
+/// Files are named `page001.png` … `pageNNN.png`.
+///
+/// # Returns
+///
+/// `(NamedTempFile, filenames_in_insertion_order)`.
+pub fn make_tar_xz(page_count: usize) -> (tempfile::NamedTempFile, Vec<String>) {
+    let tmp = tempfile::Builder::new()
+        .suffix(".tar.xz")
+        .tempfile()
+        .expect("failed to create temp tar.xz");
+
+    let file = tmp.reopen().expect("failed to reopen temp tar.xz");
+    let encoder = xz2::write::XzEncoder::new(file, 6);
+    let mut tar = tar::Builder::new(encoder);
+
+    let mut names = Vec::with_capacity(page_count);
+    for i in 1..=page_count {
+        let name = page_name(i);
+        let mut header = tar::Header::new_gnu();
+        header.set_size(MINIMAL_PNG.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        tar.append_data(&mut header, &name, MINIMAL_PNG)
+            .expect("tar append_data");
+        names.push(name);
+    }
+    tar.finish().expect("tar finish");
+
+    (tmp, names)
+}
