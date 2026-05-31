@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 8 완료 (Swift XCTest 통과 + Rotation + 이미지 벤치마크)
+> 현재 Phase: Sprint 9 완료 (파이프라인 E2E + 썸네일 FFI + App Support DB)
 
 ---
 
@@ -10,7 +10,7 @@
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
 Phase 2: 아카이브 엔진  [x] 4/4 sprint (완료)
-Phase 3: 이미지 파이프라인 [~] 2/4 sprint (Sprint 8 — rotation + benchmark)
+Phase 3: 이미지 파이프라인 [~] 3/4 sprint (Sprint 9 — E2E + FFI 노출)
 Phase 5: Swift FFI     [x] 3/3 sprint (Sprint 6+7+8 — 완료)
 Phase 6: UI 배선        [ ] 0/6 sprint
 Phase 7: OCR 통합       [ ] 0/2 sprint
@@ -98,11 +98,15 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] SimpleComicCore .gitignore 추가 (.build/ 제외)
 - [x] 커밋: 295be1e, d37108f
 
-### Sprint 9: 두 페이지 합성 + 썸네일
-- [ ] `Compositor`: 두 이미지 side-by-side 합성
-- [ ] aspect ratio 기반 정렬 (TSSTPageView 로직 이식)
-- [ ] 썸네일 생성: rayon 병렬 처리
-- [ ] 단위 테스트: 합성 결과 픽셀 비교 (기존 출력 대비)
+### Sprint 9: 파이프라인 E2E + 썸네일 FFI + App Support DB ✅ (2026-06-01)
+- [x] `sc-ffi/tests/pipeline_test.rs`: 5개 E2E 통합 테스트
+  archive→image→scale→rotate→thumbnail 전체 체인
+- [x] `simplecomic.udl`: `generate_thumbnail`, `generate_archive_thumbnails` + `ThumbnailRecord`
+- [x] `sc-ffi/src/lib.rs`: 썸네일 API 구현 (rayon 병렬, RGBA 바이트 반환)
+- [x] 세션 DB 경로: `$TMPDIR` → `~/Library/Application Support/SimpleComic/sessions.sqlite`
+- [x] `sc-ffi/Cargo.toml`: `dirs`, `image` 의존성 추가
+- [x] `crate-type` += `rlib` (통합 테스트 링킹 지원)
+- [x] 커밋: 6f6ec9f
 
 ### Sprint 10: PDF 지원 + 파이프라인 통합
 - [ ] PDF 페이지 → 이미지 (PDFKit Swift 래퍼 or pdfium-render)
@@ -375,6 +379,19 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - 링커 이슈 해결: libbz2(SDK) + liblzma(Homebrew) + libc++(C++) 명시적 링킹
 - rotation 파이프라인: RGBA 통일 변환 후 imageops rotate90/180/270 적용
 - `zoom_level` 기본값 0.0→1.0 수정 (세션 미존재 시 올바른 100% 줌 반환)
+
+### Sprint 9 — E2E 파이프라인 + 썸네일 FFI + App Support DB (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 92 pass / 0 fail (+5 신규 E2E) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 6f6ec9f |
+
+**핵심 학습:**
+- `sc-ffi`에 `rlib` crate-type 추가 필수 — `staticlib`/`cdylib`만으로는 통합 테스트에서 `extern crate simplecomic` 링크 불가
+- UDL의 `[ByRef] bytes` → Rust `&[u8]` (소유권 이전 없이 바이트 슬라이스 전달)
 
 ---
 
