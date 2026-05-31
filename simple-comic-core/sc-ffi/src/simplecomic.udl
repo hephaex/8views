@@ -64,6 +64,30 @@ namespace simplecomic {
     /// No-op if no record exists; never throws.
     void session_delete([ByRef] string archive_path);
 
+    // ── Thumbnail API ────────────────────────────────────────────────────────
+    //
+    // Thumbnail generation uses sc_image::generate_thumbnails_sorted backed by
+    // rayon for parallel decompression + decode.  The caller provides raw image
+    // bytes (as returned by archive_read_page); the library handles decoding and
+    // resizing to the requested size.
+
+    /// Generate a thumbnail for a single page's raw image bytes.
+    ///
+    /// Returns the thumbnail as raw RGBA bytes (width × height × 4).
+    /// `thumb_size` is the maximum edge length (thumbnail is fit within a square).
+    [Throws=ScError]
+    bytes generate_thumbnail([ByRef] bytes image_bytes, u32 thumb_size);
+
+    /// Generate thumbnails for all pages of an archive in parallel.
+    ///
+    /// Returns one ThumbnailRecord per page, sorted by page index.
+    /// Pages that fail to decode are silently skipped.
+    [Throws=ScError]
+    sequence<ThumbnailRecord> generate_archive_thumbnails(
+        [ByRef] string archive_path,
+        u32 thumb_size
+    );
+
     // ── Utility ─────────────────────────────────────────────────────────────
 
     /// Return the library version string (SemVer, e.g. "0.1.0").
@@ -146,4 +170,20 @@ enum ScError {
     "Io",
     "UnsupportedFormat",
     "EntryNotFound",
+};
+
+// ── Thumbnail result ──────────────────────────────────────────────────────────
+
+dictionary ThumbnailRecord {
+    /// Page index (zero-based, matches ArchiveEntryRecord.index).
+    u32 index;
+
+    /// Thumbnail image as raw RGBA bytes (width × height × 4).
+    bytes rgba_bytes;
+
+    /// Width of the thumbnail in pixels.
+    u32 width;
+
+    /// Height of the thumbnail in pixels.
+    u32 height;
 };

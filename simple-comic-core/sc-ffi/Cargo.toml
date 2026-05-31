@@ -8,7 +8,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [lib]
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
 name = "simplecomic"
 
 [dependencies]
@@ -21,6 +21,15 @@ thiserror.workspace = true
 serde.workspace = true
 tracing.workspace = true
 uniffi.workspace = true
+dirs.workspace = true
+image.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+zip.workspace = true
+sc-image = { path = "../sc-image" }
+sc-archive = { path = "../sc-archive" }
+sc-core = { path = "../sc-core" }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

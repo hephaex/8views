@@ -27,6 +27,14 @@ pub struct SessionStateRecord {
     pub scroll_y: f64,
 }
 
+#[derive(Debug, Clone)]
+pub struct ThumbnailRecord {
+    pub index: u32,
+    pub rgba_bytes: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+}
+
 // ── Error type (UDL `[Error] enum` mapping) ──────────────────────────────────
 // Flat enum: no associated data on any variant; uniffi exposes the Display
 // message as the Swift error description.
@@ -115,12 +123,22 @@ pub fn archive_read_first_image(archive_path: &str) -> Result<Vec<u8>, ScError> 
 /// Open the session database.
 ///
 /// In test builds uses an in-memory database so parallel tests do not contend
-/// on the same file.  In production uses a file under `$TMPDIR` (Sprint 15
-/// will replace this with the platform app-support directory).
+/// on the same file.  In production uses a file under the platform app-support directory:
+/// - macOS: ~/Library/Application Support/SimpleComic/sessions.sqlite
+/// - Linux: ~/.local/share/SimpleComic/sessions.sqlite
+/// - Fallback: $TMPDIR/simplecomic_sessions.sqlite
 #[cfg(not(test))]
 fn open_session_db() -> Result<sc_storage::SessionManager, ScError> {
-    let mut db_path = std::env::temp_dir();
-    db_path.push("simplecomic_sessions.sqlite");
+    let base = dirs::data_dir()
+        .or_else(|| dirs::home_dir().map(|h| h.join(".local/share")))
+        .unwrap_or_else(std::env::temp_dir);
+
+    let app_dir = base.join("SimpleComic");
+    if !app_dir.exists() {
+        let _ = std::fs::create_dir_all(&app_dir);
+    }
+
+    let db_path = app_dir.join("sessions.sqlite");
     sc_storage::SessionManager::open(&db_path).map_err(|_| ScError::Storage)
 }
 
@@ -152,6 +170,56 @@ pub fn session_delete(archive_path: &str) {
 
 pub fn sc_library_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+// ── Thumbnail functions ───────────────────────────────────────────────────────
+
+/// Generate a thumbnail for raw image bytes. Returns raw RGBA bytes.
+pub fn generate_thumbnail(image_bytes: &[u8], thumb_size: u32) -> Result<Vec<u8>, ScError> {
+    let img = image::load_from_memory(image_bytes).map_err(|_| ScError::Image)?;
+    let spec = sc_image::ThumbnailSpec {
+        width: thumb_size,
+        height: thumb_size,
+    };
+    let thumb = sc_image::thumbnail::generate_thumbnail(&img, spec);
+    Ok(thumb.to_rgba8().into_raw())
+}
+
+/// Generate thumbnails for all pages in an archive in parallel.
+pub fn generate_archive_thumbnails(
+    archive_path: &str,
+    thumb_size: u32,
+) -> Result<Vec<ThumbnailRecord>, ScError> {
+    let mut archive =
+        sc_archive::open_archive(std::path::Path::new(archive_path)).map_err(ScError::from)?;
+
+    let entries: Vec<(usize, Vec<u8>)> = archive
+        .entries()
+        .iter()
+        .map(|e| e.index)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .filter_map(|idx| archive.read_entry(idx).ok().map(|b| (idx, b)))
+        .collect();
+
+    let spec = sc_image::ThumbnailSpec {
+        width: thumb_size,
+        height: thumb_size,
+    };
+    let thumbnails = sc_image::generate_thumbnails_sorted(&entries, spec);
+
+    Ok(thumbnails
+        .into_iter()
+        .map(|(idx, img)| {
+            let rgba = img.to_rgba8();
+            ThumbnailRecord {
+                index: idx as u32,
+                rgba_bytes: rgba.clone().into_raw(),
+                width: rgba.width(),
+                height: rgba.height(),
+            }
+        })
+        .collect())
 }
 
 // ── Type conversions ──────────────────────────────────────────────────────────
