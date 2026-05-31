@@ -1,14 +1,14 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 1 (Sprint 1 완료)
+> 현재 Phase: 1 (Sprint 2 완료)
 
 ---
 
 ## 전체 진행률
 
 ```
-Phase 1: 설정          [x] 1/2 sprint (Sprint 1 완료)
+Phase 1: 설정          [x] 2/2 sprint (완료)
 Phase 2: 아카이브 엔진  [ ] 0/4 sprint
 Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
 Phase 4: 세션 스토리지   [ ] 0/3 sprint
@@ -33,11 +33,12 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] `cargo check/test/clippy/fmt` 전체 통과 (12 tests)
 - [x] 커밋: 8833a8d
 
-### Sprint 2: 개발 환경 & 벤치마크 기준선
-- [ ] Rust 크로스 컴파일 설정 (arm64-apple-darwin + x86_64-apple-darwin)
-- [ ] `criterion` 벤치마크 프레임워크 설정
-- [ ] 기존 앱 성능 기준선 측정 (아카이브 오픈, 페이지 전환, 썸네일 생성)
-- [ ] 테스트 픽스처: CBZ/CBR/7z/TAR 샘플 파일 준비
+### Sprint 2: 개발 환경 & 벤치마크 기준선 ✅ (2026-06-01)
+- [x] 크로스 컴파일 검증: arm64 + x86_64 → `libsimplecomic-universal.a` 11MB
+- [x] criterion 벤치마크 하네스: archive (sort/filter), image (scale/compositor/cache)
+- [x] 테스트 픽스처: `tests/common/mod.rs` — make_cbz / make_tar_gz 생성기
+- [x] 통합 테스트 4개 (CBZ 목록/읽기/정렬, TAR.GZ 목록)
+- [x] 커밋: f034d47
 
 ---
 
@@ -232,6 +233,24 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - `sc-ffi`: static lib 스캐폴딩, sc_version() FFI 함수
 
 **주의:** uniffi 0.29 사용 (최신 0.31.1과 의존성 충돌로 락됨 — Sprint 14 FFI 통합 시 업그레이드 검토)
+
+### Sprint 2 — 개발 환경 & 벤치마크 기준선 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 16 pass / 0 fail (12 unit + 4 integration) |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| universal lib | 11MB (arm64 + x86_64) |
+| 커밋 | f034d47 |
+
+**추가된 내용:**
+- Universal static lib (`lipo -create`) 빌드 검증 완료
+- criterion 벤치마크 5개: `natural_sort`, `is_image_entry`, `scale_fit_window`, `two_page_spread`, `cache_insert_evict`
+- `tests/common/mod.rs` 픽스처: `make_cbz`, `make_cbz_with_names`, `make_tar_gz`
+- 통합 테스트: `cbz_open_and_list`, `cbz_read_entry_returns_bytes`, `cbz_natural_sort_order`, `tar_gz_open_and_list`
+
+**학습:** `#[cfg(test)]`로 게이트한 `src/` 모듈은 `tests/` 통합 테스트에서 접근 불가 → `tests/common/mod.rs` 패턴 사용
 
 ---
 
