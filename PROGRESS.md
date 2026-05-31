@@ -1,0 +1,232 @@
+# Simple Comic — Rust 리팩토링 진행 상황
+
+> 시작: 2026-06-01
+> 현재 Phase: 0 (시작 전)
+
+---
+
+## 전체 진행률
+
+```
+Phase 1: 설정          [ ] 0/2 sprint
+Phase 2: 아카이브 엔진  [ ] 0/4 sprint
+Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
+Phase 4: 세션 스토리지   [ ] 0/3 sprint
+Phase 5: Swift FFI     [ ] 0/3 sprint
+Phase 6: UI 배선        [ ] 0/6 sprint
+Phase 7: OCR 통합       [ ] 0/2 sprint
+Phase 8: QuickLook     [ ] 0/2 sprint
+Phase 9: 최종 검증      [ ] 0/2 sprint
+────────────────────────────────────
+합계: 0/28 sprint
+```
+
+---
+
+## Phase 1: 프로젝트 설정
+
+### Sprint 1: Cargo Workspace 구성
+- [ ] `simple-comic-core/` Cargo workspace 생성
+- [ ] 크레이트 구조 설계: `core`, `archive`, `image-pipeline`, `storage`
+- [ ] `uniffi` 0.28 의존성 추가 + Swift 패키지 스캐폴딩
+- [ ] CI 설정: GitHub Actions `cargo test`, `cargo clippy`, `cargo fmt`
+- [ ] `libsimplecomic.a` 빌드 → Xcode 링크 검증
+
+### Sprint 2: 개발 환경 & 벤치마크 기준선
+- [ ] Rust 크로스 컴파일 설정 (arm64-apple-darwin + x86_64-apple-darwin)
+- [ ] `criterion` 벤치마크 프레임워크 설정
+- [ ] 기존 앱 성능 기준선 측정 (아카이브 오픈, 페이지 전환, 썸네일 생성)
+- [ ] 테스트 픽스처: CBZ/CBR/7z/TAR 샘플 파일 준비
+
+---
+
+## Phase 2: 아카이브 엔진
+
+### Sprint 3: ZIP/CBZ
+- [ ] `ArchiveReader` trait 정의
+- [ ] `ZipArchive` 구현 (`zip` 크레이트)
+- [ ] 엔트리 목록 + 자연 정렬
+- [ ] 파일명 인코딩 자동 감지 (`chardet` 크레이트)
+- [ ] 단위 테스트: 엔트리 목록, 엔트리 읽기, 정렬 순서
+
+### Sprint 4: RAR/CBR + TAR 계열
+- [ ] `RarArchive` 구현 (compress-tools via libarchive)
+- [ ] `TarArchive` 구현 (gz, bz2, xz)
+- [ ] 중첩 아카이브 재귀 탐색
+- [ ] 단위 테스트: RAR/TAR 파일 읽기
+
+### Sprint 5: 7z + 폴더 지원
+- [ ] `SevenZipArchive` 구현 (`sevenz-rust` 크레이트)
+- [ ] `FolderReader` 구현 (이미지 파일만 필터링)
+- [ ] `PartialReader`: 첫 이미지만 추출 (QuickLook용)
+- [ ] 단위 테스트: 7z, 폴더 열기
+
+### Sprint 6: 아카이브 엔진 통합 + FFI 노출
+- [ ] `ArchiveFactory`: 파일 확장자로 적절한 구현 선택
+- [ ] uniffi UDL: `open_archive()`, `list_pages()`, `read_page_data()` 노출
+- [ ] 통합 테스트: 모든 포맷 end-to-end
+- [ ] 성능 벤치마크: 200페이지 CBZ 오픈 < 500ms
+
+---
+
+## Phase 3: 이미지 파이프라인
+
+### Sprint 7: 기본 이미지 로딩
+- [ ] `ImageLoader`: JPEG/PNG/GIF/BMP/TIFF 로딩
+- [ ] WebP 지원 (`webp` 크레이트)
+- [ ] 이미지 메타데이터: 너비, 높이, aspect ratio
+- [ ] LRU 캐시 (`lru` 크레이트, 최대 50개 페이지)
+- [ ] 단위 테스트: 각 포맷 로딩, 캐시 히트/미스
+
+### Sprint 8: 스케일링 + 회전
+- [ ] 스케일 모드: original, fit-window, fit-width
+- [ ] 회전: 0/90/180/270도
+- [ ] 고품질 다운샘플링 (Lanczos/Mitchell)
+- [ ] 단위 테스트: 각 모드 출력 크기 검증
+
+### Sprint 9: 두 페이지 합성 + 썸네일
+- [ ] `Compositor`: 두 이미지 side-by-side 합성
+- [ ] aspect ratio 기반 정렬 (TSSTPageView 로직 이식)
+- [ ] 썸네일 생성: rayon 병렬 처리
+- [ ] 단위 테스트: 합성 결과 픽셀 비교 (기존 출력 대비)
+
+### Sprint 10: PDF 지원 + 파이프라인 통합
+- [ ] PDF 페이지 → 이미지 (PDFKit Swift 래퍼 or pdfium-render)
+- [ ] uniffi UDL: `load_image()`, `get_thumbnail()`, `composite_two_pages()` 노출
+- [ ] 성능 벤치마크: 썸네일 200개 생성 < 3s
+
+---
+
+## Phase 4: 세션 스토리지
+
+### Sprint 11: SQLite 스키마 설계
+- [ ] Core Data 6 엔티티 → SQLite 테이블 설계
+  ```sql
+  sessions, groups, pages (hierarchy via parent_id)
+  ```
+- [ ] `rusqlite_migration` 마이그레이션 v0→v1
+- [ ] `SessionManager`: create, load, save, delete
+- [ ] 단위 테스트: CRUD 전체
+
+### Sprint 12: 세션 상태 + xattr
+- [ ] 세션 상태 저장: zoom, rotation, two_page_spread, page_order, scroll_position
+- [ ] `XattrStore`: 파일 확장 속성 읽기/쓰기 (`xattr` 크레이트)
+- [ ] 단위 테스트: 상태 저장/복원 round-trip
+
+### Sprint 13: Core Data 마이그레이션
+- [ ] Core Data 바이너리 → SQLite 변환 도구
+- [ ] 기존 세션 데이터 손실 없는 마이그레이션 검증
+- [ ] uniffi UDL: 세션 API 노출
+- [ ] 통합 테스트: 마이그레이션 후 모든 세션 접근 가능
+
+---
+
+## Phase 5: Swift FFI 통합
+
+### Sprint 14: uniffi 바인딩 생성
+- [ ] UDL 파일 전체 작성 (`simplecomic.udl`)
+- [ ] `cargo build` → `libsimplecomic.a` + Swift 바인딩 파일 자동 생성
+- [ ] Swift Package에서 빌드 검증
+
+### Sprint 15: Xcode 통합
+- [ ] Xcode 프로젝트 링크 설정 (`-lsimplecomic`, `-lc++`)
+- [ ] Build Phase: Rust 빌드 스크립트 추가
+- [ ] Bridging header 업데이트
+- [ ] Swift 단위 테스트: Rust 함수 호출 검증
+
+### Sprint 16: 데이터 타입 매핑
+- [ ] Rust 타입 ↔ Swift 타입 완전 매핑
+- [ ] 에러 전파: Rust `anyhow::Error` → Swift `Error`
+- [ ] 메모리 소유권 검증 (ARC + Rust 라이프타임)
+- [ ] 스레드 안전성 검증
+
+---
+
+## Phase 6: UI 배선
+
+### Sprint 17: 앱 델리게이트 배선
+- [ ] `SimpleComicAppDelegate.m` — 아카이브 오픈 → Rust `open_archive()`
+- [ ] 파일 연결 (UTI) 검증
+- [ ] 드래그 앤 드롭 검증
+
+### Sprint 18~19: 세션 윈도우 컨트롤러 배선
+- [ ] `TSSTSessionWindowController.m` — 페이지 전환 → Rust 캐시
+- [ ] 세션 상태 저장/복원 → Rust `SessionManager`
+- [ ] 줌/회전/페이지 순서 → Rust 상태
+
+### Sprint 20: 페이지 뷰 배선
+- [ ] `TSSTPageView.m` — 이미지 렌더링 → Rust 파이프라인
+- [ ] 두 페이지 합성 → Rust `Compositor`
+- [ ] 픽셀 동일성 검증
+
+### Sprint 21: 썸네일 뷰 배선
+- [ ] `TSSTThumbnailView.swift` — 썸네일 → Rust 병렬 생성
+- [ ] 프로그레스 바 → Rust 세션 상태
+
+### Sprint 22: 전체 UI 검증
+- [ ] 모든 메뉴 항목 동작 확인
+- [ ] 환경설정 창 저장/불러오기
+- [ ] 전체화면 모드 + Touch Bar
+
+---
+
+## Phase 7: OCR 통합
+
+### Sprint 23: OCR 검색 엔진 이식
+- [ ] `OCRFind.m` 검색 로직 → Rust (`aho-corasick`)
+- [ ] 텍스트 인덱스 Rust 구조체로 관리
+- [ ] Vision 결과(Swift) → Rust 인덱스 업데이트 경로
+
+### Sprint 24: OCR UI 검증
+- [ ] 텍스트 선택 정확도 기존 대비 비교
+- [ ] Find 다이얼로그 (OCRFindViewController) 동작 확인
+- [ ] 회전/줌 상태에서 텍스트 선택 확인
+
+---
+
+## Phase 8: QuickLook 플러그인
+
+### Sprint 25: 썸네일 익스텐션
+- [ ] `ThumbnailProvider.swift` → Rust `PartialReader` + `ImageLoader` 위임
+- [ ] Finder 썸네일 검증 (CBZ/CBR/7z)
+
+### Sprint 26: 미리보기 익스텐션
+- [ ] `PreviewProvider.swift` → Rust 아카이브 첫 이미지 추출 위임
+- [ ] 스페이스바 미리보기 검증
+
+---
+
+## Phase 9: 최종 검증 및 정리
+
+### Sprint 27: 성능 + 메모리 검증
+- [ ] 전체 벤치마크 실행 (PLAN.md 기준 충족 확인)
+- [ ] Instruments Leaks: 메모리 누수 0
+- [ ] Instruments Allocations: 피크 메모리 < 200MB
+- [ ] 미사용 Objective-C 코드 제거
+
+### Sprint 28: Core Data 제거 + 릴리즈
+- [ ] Core Data 프레임워크 의존성 완전 제거
+- [ ] `Sessions_DataModel.xcdatamodeld` 삭제
+- [ ] CHANGELOG 업데이트
+- [ ] v2.0.0 태그 생성
+
+---
+
+## 완료된 스프린트
+
+*(아직 없음)*
+
+---
+
+## 결정 기록
+
+| 날짜 | 결정 | 근거 |
+|------|------|------|
+| 2026-06-01 | 하이브리드 아키텍처 채택 | macOS UI 바인딩 미성숙, 점진적 교체 가능 |
+| 2026-06-01 | uniffi로 Swift 바인딩 | Mozilla 검증, Swift Package 통합 용이 |
+| 2026-06-01 | compress-tools로 RAR | unrar 크레이트 라이선스 문제 우회 |
+| 2026-06-01 | Vision 프레임워크 Swift 유지 | macOS 전용, Rust 바인딩 없음 |
+
+---
+
+*최종 업데이트: 2026-06-01*

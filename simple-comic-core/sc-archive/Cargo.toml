@@ -1,0 +1,31 @@
+[package]
+name = "sc-archive"
+description = "Simple Comic archive reading engine (ZIP, RAR, 7z, TAR)"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sc-core = { path = "../sc-core" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+tracing.workspace = true
+zip.workspace = true
+tar.workspace = true
+flate2.workspace = true
+bzip2.workspace = true
+xz2.workspace = true
+sevenz-rust.workspace = true
+chardetng.workspace = true
+encoding_rs.workspace = true
+natord.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "archive_bench"
+harness = false

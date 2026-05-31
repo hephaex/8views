@@ -1,0 +1,26 @@
+[package]
+name = "sc-ffi"
+description = "Simple Comic Swift/Objective-C FFI bindings via uniffi"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+name = "simplecomic"
+
+[dependencies]
+sc-core = { path = "../sc-core" }
+sc-archive = { path = "../sc-archive" }
+sc-image = { path = "../sc-image" }
+sc-storage = { path = "../sc-storage" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+tracing.workspace = true
+uniffi.workspace = true
+
+[build-dependencies]
+uniffi = { workspace = true, features = ["build"] }

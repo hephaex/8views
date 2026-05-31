@@ -1,0 +1,25 @@
+[package]
+name = "sc-image"
+description = "Simple Comic image loading, scaling, rotation and compositing pipeline"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sc-core = { path = "../sc-core" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+tracing.workspace = true
+image.workspace = true
+rayon.workspace = true
+lru.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "image_bench"
+harness = false
