@@ -38,6 +38,7 @@ flate2 = "1"
 bzip2 = "0.5"
 xz2 = "0.1"
 sevenz-rust = "0.6"
+unrar = { package = "unrar-ng", version = "0.7" }
 
 # Image
 image = { version = "0.25", features = ["jpeg", "png", "gif", "bmp", "tiff", "webp"] }

@@ -1,11 +1,14 @@
 pub mod encoding;
 pub mod folder_reader;
+pub mod partial_reader;
+pub mod rar_archive;
 pub mod reader;
 pub mod sevenz_archive;
 pub mod sort;
 pub mod tar_archive;
 pub mod zip_archive;
 
+pub use partial_reader::read_first_image;
 pub use reader::{ArchiveEntry, ArchiveReader};
 
 use anyhow::Result;
@@ -38,6 +41,7 @@ pub fn open_archive(path: &Path) -> Result<Box<dyn ArchiveReader>> {
             tar_archive::Compression::Xz,
         )?)),
         Some("7z") => Ok(Box::new(sevenz_archive::SevenZArchive::open(path)?)),
+        Some("rar") | Some("cbr") => Ok(Box::new(rar_archive::RarArchive::open(path)?)),
         None => {
             if path.is_dir() {
                 Ok(Box::new(folder_reader::FolderReader::open(path)?))

@@ -22,6 +22,7 @@ sevenz-rust.workspace = true
 chardetng.workspace = true
 encoding_rs.workspace = true
 natord.workspace = true
+unrar.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true

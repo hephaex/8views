@@ -125,3 +125,40 @@ pub fn make_tar_gz(page_count: usize) -> (tempfile::NamedTempFile, Vec<String>) 
 
     (tmp, names)
 }
+
+/// Create a temporary directory containing `page_count` 1×1 PNG images.
+///
+/// Caller must keep the returned `TempDir` alive; dropping it deletes the directory.
+pub fn make_folder(page_count: usize) -> (tempfile::TempDir, Vec<String>) {
+    let dir = tempfile::tempdir().expect("failed to create temp dir");
+    let mut names = Vec::with_capacity(page_count);
+    for i in 1..=page_count {
+        let name = page_name(i);
+        std::fs::write(dir.path().join(&name), MINIMAL_PNG).expect("write png");
+        names.push(name);
+    }
+    (dir, names)
+}
+
+/// Create a temporary 7z file containing `page_count` 1×1 PNG images.
+///
+/// Uses a staging directory: writes PNGs into a temp dir, then compresses it.
+/// Returns `(staging_dir, sevenz_tmp_file, names)` — keep both alive.
+pub fn make_sevenz(page_count: usize) -> (tempfile::TempDir, tempfile::NamedTempFile, Vec<String>) {
+    let stage = tempfile::tempdir().expect("failed to create staging dir");
+    let mut names = Vec::with_capacity(page_count);
+    for i in 1..=page_count {
+        let name = page_name(i);
+        std::fs::write(stage.path().join(&name), MINIMAL_PNG).expect("write png");
+        names.push(name);
+    }
+
+    let tmp_7z = tempfile::Builder::new()
+        .suffix(".7z")
+        .tempfile()
+        .expect("failed to create temp 7z");
+
+    sevenz_rust::compress_to_path(stage.path(), tmp_7z.path()).expect("sevenz compress failed");
+
+    (stage, tmp_7z, names)
+}
