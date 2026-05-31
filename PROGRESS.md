@@ -1,14 +1,14 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: 0 (시작 전)
+> 현재 Phase: 1 (Sprint 1 완료)
 
 ---
 
 ## 전체 진행률
 
 ```
-Phase 1: 설정          [ ] 0/2 sprint
+Phase 1: 설정          [x] 1/2 sprint (Sprint 1 완료)
 Phase 2: 아카이브 엔진  [ ] 0/4 sprint
 Phase 3: 이미지 파이프라인 [ ] 0/4 sprint
 Phase 4: 세션 스토리지   [ ] 0/3 sprint
@@ -25,12 +25,13 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 
 ## Phase 1: 프로젝트 설정
 
-### Sprint 1: Cargo Workspace 구성
-- [ ] `simple-comic-core/` Cargo workspace 생성
-- [ ] 크레이트 구조 설계: `core`, `archive`, `image-pipeline`, `storage`
-- [ ] `uniffi` 0.28 의존성 추가 + Swift 패키지 스캐폴딩
-- [ ] CI 설정: GitHub Actions `cargo test`, `cargo clippy`, `cargo fmt`
-- [ ] `libsimplecomic.a` 빌드 → Xcode 링크 검증
+### Sprint 1: Cargo Workspace 구성 ✅ (2026-06-01)
+- [x] `simple-comic-core/` Cargo workspace 생성
+- [x] 크레이트 구조 설계: `sc-core`, `sc-archive`, `sc-image`, `sc-storage`, `sc-ffi`
+- [x] uniffi 0.29 + zip/sevenz/tar/image/rusqlite 의존성 설정
+- [x] CI 설정: GitHub Actions `cargo test`, `cargo clippy`, `cargo fmt`
+- [x] `cargo check/test/clippy/fmt` 전체 통과 (12 tests)
+- [x] 커밋: 8833a8d
 
 ### Sprint 2: 개발 환경 & 벤치마크 기준선
 - [ ] Rust 크로스 컴파일 설정 (arm64-apple-darwin + x86_64-apple-darwin)
@@ -214,7 +215,23 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 
 ## 완료된 스프린트
 
-*(아직 없음)*
+### Sprint 1 — Cargo Workspace 구성 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| tests | 12 pass / 0 fail |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 8833a8d |
+
+**생성된 모듈:**
+- `sc-core`: ScaleMode, Rotation, PageOrder, SortOrder, ImageMetadata, ScError
+- `sc-archive`: ArchiveReader trait, ZipArchive, TarArchive, SevenZArchive, FolderReader, 자연 정렬, 인코딩 감지
+- `sc-image`: ImageLoader, ScaleOptions, Compositor (두 페이지 합성), ImageCache (LRU)
+- `sc-storage`: SessionManager (SQLite CRUD), xattr_store, migration schema
+- `sc-ffi`: static lib 스캐폴딩, sc_version() FFI 함수
+
+**주의:** uniffi 0.29 사용 (최신 0.31.1과 의존성 충돌로 락됨 — Sprint 14 FFI 통합 시 업그레이드 검토)
 
 ---
 
