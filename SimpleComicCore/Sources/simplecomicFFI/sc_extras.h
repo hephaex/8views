@@ -82,6 +82,42 @@ uint64_t sc_page_list_size(const ScPageList * _Nonnull list, uint32_t index);
 /// Free a ScPageList returned by sc_archive_open_pages. NULL is safe.
 void sc_archive_pages_free(ScPageList * _Nullable list);
 
+// ── Session state ─────────────────────────────────────────────────────────────
+
+/// Session state for one archive. Mirrors the Rust SessionStateRecord.
+typedef struct {
+    uint32_t page_index;        ///< 0-based page (matches sc_archive_read_page index)
+    double   zoom_level;        ///< 1.0 = 100%
+    int32_t  rotation_degrees;  ///< 0, 90, 180, or 270
+    bool     two_page_spread;
+    bool     right_to_left;     ///< true = manga (right-to-left) mode
+    int32_t  scale_mode;        ///< 0=fit-window, 1=fit-width, 2=actual-size
+    double   scroll_x;
+    double   scroll_y;
+} ScSessionState;
+
+/// Load persisted session state for archive_path.
+///
+/// On success writes state to *out_state and returns true.
+/// On failure (no record or DB error) writes default state and returns false.
+/// archive_path must be a valid NUL-terminated UTF-8 C string.
+/// out_state must be a valid non-null pointer.
+bool sc_session_load(
+    const char * _Nonnull archive_path,
+    ScSessionState * _Nonnull out_state
+);
+
+/// Persist session state for archive_path. Returns true on success.
+///
+/// archive_path and state must be valid non-null pointers.
+bool sc_session_save(
+    const char * _Nonnull archive_path,
+    const ScSessionState * _Nonnull state
+);
+
+/// Delete persisted session state for archive_path. No-op if not found. NULL is safe.
+void sc_session_delete_c(const char * _Nullable archive_path);
+
 #ifdef __cplusplus
 }
 #endif

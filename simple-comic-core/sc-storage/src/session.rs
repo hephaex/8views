@@ -59,6 +59,18 @@ impl SessionManager {
         Ok(Self { conn })
     }
 
+    /// Return true if a session record exists for `archive_path`.
+    pub fn exists(&self, archive_path: &str) -> bool {
+        self.conn
+            .query_row(
+                "SELECT COUNT(*) FROM sessions WHERE path = ?1",
+                rusqlite::params![archive_path],
+                |row| row.get::<_, i64>(0),
+            )
+            .unwrap_or(0)
+            > 0
+    }
+
     /// Load session state for an archive path. Returns default state if not found.
     pub fn load(&self, archive_path: &str) -> Result<SessionState> {
         let result = self.conn.query_row(

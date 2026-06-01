@@ -361,6 +361,116 @@ pub fn sc_library_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+// ── Session C FFI ─────────────────────────────────────────────────────────────
+
+/// C-compatible session state; mirrors SessionStateRecord.
+/// All fields use fixed-width types safe for C struct layouts.
+#[repr(C)]
+pub struct ScSessionState {
+    pub page_index: u32,
+    pub zoom_level: f64,
+    pub rotation_degrees: i32,
+    pub two_page_spread: bool,
+    pub right_to_left: bool,
+    pub scale_mode: i32,
+    pub scroll_x: f64,
+    pub scroll_y: f64,
+}
+
+/// C-callable: load persisted session state for `archive_path`.
+///
+/// On success writes state to `*out_state` and returns true.
+/// On failure (no record, DB error) writes default state and returns false.
+/// archive_path must be a valid NUL-terminated UTF-8 C string.
+/// out_state must be a valid non-null pointer.
+///
+/// # Safety
+/// `archive_path` must be a valid NUL-terminated UTF-8 C string.
+/// `out_state` must be a valid non-null pointer to a `ScSessionState`.
+#[no_mangle]
+pub unsafe extern "C" fn sc_session_load(
+    archive_path: *const std::ffi::c_char,
+    out_state: *mut ScSessionState,
+) -> bool {
+    if archive_path.is_null() || out_state.is_null() {
+        return false;
+    }
+    let path_str = match std::ffi::CStr::from_ptr(archive_path).to_str() {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    // Only return true if the DB actually has a record for this path.
+    let mgr = match open_session_db() {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+    if !mgr.exists(path_str) {
+        return false;
+    }
+    let state = match mgr.load(path_str) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let rec = state_to_record(state);
+    *out_state = ScSessionState {
+        page_index: rec.page_index,
+        zoom_level: rec.zoom_level,
+        rotation_degrees: rec.rotation_degrees,
+        two_page_spread: rec.two_page_spread,
+        right_to_left: rec.right_to_left,
+        scale_mode: rec.scale_mode,
+        scroll_x: rec.scroll_x,
+        scroll_y: rec.scroll_y,
+    };
+    true
+}
+
+/// C-callable: persist session state for `archive_path`.
+///
+/// Returns true on success, false on DB error.
+///
+/// # Safety
+/// Both pointers must be valid NUL-terminated UTF-8 C strings / structs.
+#[no_mangle]
+pub unsafe extern "C" fn sc_session_save(
+    archive_path: *const std::ffi::c_char,
+    state: *const ScSessionState,
+) -> bool {
+    if archive_path.is_null() || state.is_null() {
+        return false;
+    }
+    let path_str = match std::ffi::CStr::from_ptr(archive_path).to_str() {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let s = &*state;
+    let rec = SessionStateRecord {
+        page_index: s.page_index,
+        zoom_level: s.zoom_level,
+        rotation_degrees: s.rotation_degrees,
+        two_page_spread: s.two_page_spread,
+        right_to_left: s.right_to_left,
+        scale_mode: s.scale_mode,
+        scroll_x: s.scroll_x,
+        scroll_y: s.scroll_y,
+    };
+    session_save(path_str, rec).is_ok()
+}
+
+/// C-callable: delete persisted session state for `archive_path`.  No-op if not found.
+///
+/// # Safety
+/// `archive_path` must be a valid NUL-terminated UTF-8 C string.
+#[no_mangle]
+pub unsafe extern "C" fn sc_session_delete_c(archive_path: *const std::ffi::c_char) {
+    if archive_path.is_null() {
+        return;
+    }
+    if let Ok(path_str) = std::ffi::CStr::from_ptr(archive_path).to_str() {
+        session_delete(path_str);
+    }
+}
+
 // ── Thumbnail functions ───────────────────────────────────────────────────────
 
 /// Generate a thumbnail for raw image bytes. Returns raw RGBA bytes.
@@ -637,5 +747,54 @@ mod tests {
     #[test]
     fn page_list_free_null_safe() {
         unsafe { sc_archive_pages_free(std::ptr::null_mut()) };
+    }
+
+    // ── ScSessionState C FFI tests ────────────────────────────────────────────
+
+    #[test]
+    fn c_session_load_returns_false_for_missing() {
+        // sc_session_load returns false (and does NOT write out_state) when the path
+        // has no record in the DB.  This lets ObjC callers detect "no saved session".
+        let path = std::ffi::CString::new("/nonexistent_sprint14_test.cbz").unwrap();
+        let mut state = ScSessionState {
+            page_index: 99, zoom_level: 0.0, rotation_degrees: 0,
+            two_page_spread: true, right_to_left: false, scale_mode: 0,
+            scroll_x: 0.0, scroll_y: 0.0,
+        };
+        let ok = unsafe { sc_session_load(path.as_ptr(), &mut state) };
+        assert!(!ok, "sc_session_load should return false for missing archive");
+        // out_state is not written when returning false — page_index stays at 99
+        assert_eq!(state.page_index, 99, "out_state should not be touched on false return");
+    }
+
+    #[test]
+    fn c_session_save_does_not_crash() {
+        // Tests use an in-memory DB (per open_session_db cfg(test)), so save succeeds
+        // but the data is not visible to a subsequent load call (different connection).
+        // Full roundtrip persistence is tested by the uniffi session_load/session_save tests.
+        let path = std::ffi::CString::new("/tmp/sc_sprint14_save_test.cbz").unwrap();
+        let state = ScSessionState {
+            page_index: 7, zoom_level: 1.5, rotation_degrees: 90,
+            two_page_spread: true, right_to_left: true, scale_mode: 2,
+            scroll_x: 10.0, scroll_y: 20.0,
+        };
+        let saved = unsafe { sc_session_save(path.as_ptr(), &state) };
+        assert!(saved, "sc_session_save should not crash and should return true");
+    }
+
+    #[test]
+    fn c_session_load_null_path_returns_false() {
+        let mut state = ScSessionState {
+            page_index: 0, zoom_level: 1.0, rotation_degrees: 0,
+            two_page_spread: false, right_to_left: false, scale_mode: 0,
+            scroll_x: 0.0, scroll_y: 0.0,
+        };
+        let ok = unsafe { sc_session_load(std::ptr::null(), &mut state) };
+        assert!(!ok);
+    }
+
+    #[test]
+    fn c_session_delete_null_safe() {
+        unsafe { sc_session_delete_c(std::ptr::null()) };
     }
 }

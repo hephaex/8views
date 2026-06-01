@@ -32,6 +32,7 @@
 #import "OCRTracker.h"
 #import "OCRVision.h"
 #import "GeneratedAssetSymbols.h"
+#import "sc_extras.h"
 
 #import "Simple_Comic-Swift.h"
 
@@ -1077,8 +1078,68 @@ NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
 }
 
 
+/// Return the archive file path for the current session, or nil for loose images.
+- (nullable NSString *)rustSessionArchivePath
+{
+    TSSTPage *firstPage = [[pageController arrangedObjects] firstObject];
+    if (!firstPage) return nil;
+    NSURL *archiveURL = firstPage.group
+        ? [firstPage valueForKeyPath:@"group.topLevelGroup.fileURL"]
+        : nil;
+    return archiveURL.path;
+}
+
+/// Apply a Rust ScSessionState to the Core Data session object.
+- (void)applyRustSessionState:(ScSessionState)rustState
+{
+    session.selection = (int16_t)rustState.page_index;
+    session.zoomLevel = (float)rustState.zoom_level;
+    session.rotation  = (int16_t)rustState.rotation_degrees;
+    session.twoPageSpread = rustState.two_page_spread;
+    session.pageOrder     = !rustState.right_to_left; // pageOrder YES = left-to-right
+    session.scaleOptions  = (int16_t)rustState.scale_mode;
+}
+
+/// Save current Core Data session state to Rust SessionManager.
+- (void)saveSessionToRust
+{
+    NSString *archivePath = [self rustSessionArchivePath];
+    if (!archivePath) return;
+
+    ScSessionState state;
+    state.page_index        = (uint32_t)session.selection;
+    state.zoom_level        = (double)session.zoomLevel;
+    state.rotation_degrees  = (int32_t)session.rotation;
+    state.two_page_spread   = (bool)session.twoPageSpread;
+    state.right_to_left     = (bool)!session.pageOrder; // pageOrder YES = left-to-right
+    state.scale_mode        = (int32_t)session.scaleOptions;
+
+    NSData *scrollData = session.scrollPosition;
+    if (scrollData) {
+        NSValue *scrollValue = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSValue class]
+                                                                fromData:scrollData error:NULL];
+        NSPoint scrollPt = scrollValue ? [scrollValue pointValue] : NSZeroPoint;
+        state.scroll_x = scrollPt.x;
+        state.scroll_y = scrollPt.y;
+    } else {
+        state.scroll_x = 0.0;
+        state.scroll_y = 0.0;
+    }
+
+    sc_session_save(archivePath.UTF8String, &state);
+}
+
 - (void)restoreSession
 {
+    // Restore from Rust SessionManager if a record exists (overrides Core Data state).
+    NSString *archivePath = [self rustSessionArchivePath];
+    if (archivePath) {
+        ScSessionState rustState;
+        if (sc_session_load(archivePath.UTF8String, &rustState)) {
+            [self applyRustSessionState:rustState];
+        }
+    }
+
 	[self changeViewImages];
 	[self scaleToWindow];
 	[self adjustStatusBar];
@@ -1620,7 +1681,11 @@ NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
 	mouseMovedTimer = nil;
     [NSCursor unhide];
     [NSApp setPresentationOptions: NSApplicationPresentationDefault];
-	
+
+    // Persist session state to Rust SessionManager (dual-write alongside Core Data).
+    [self updateSessionObject];
+    [self saveSessionToRust];
+
     [session removeObserver: self forKeyPath: TSSTPageOrder];
     [session removeObserver: self forKeyPath: TSSTPageScaleOptions];
     [session removeObserver: self forKeyPath: TSSTTwoPageSpread];
