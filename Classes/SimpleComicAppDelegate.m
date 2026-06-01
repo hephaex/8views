@@ -28,6 +28,7 @@
 #import "Simple_Comic-Swift.h"
 #import "TSSTManagedSession+CoreDataProperties.h"
 #import "OCRTracker.h"
+#import "sc_extras.h"
 
 #import <WebPMac/TSSTWebPImageRep.h>
 
@@ -303,7 +304,7 @@ static NSArray<NSNumber*> * allAvailableStringEncodings(void)
 			NSMutableArray * looseImages = [NSMutableArray array];
 			for(NSString * path in launchFiles)
 			{
-				if([[TSSTManagedArchive archiveExtensions] containsObject: [[path pathExtension] lowercaseString]])
+				if(sc_archive_is_supported([path UTF8String]))
 				{
 					session = [self newSessionWithFiles: @[path]];
 					[self windowForSession: session];
@@ -407,7 +408,7 @@ static NSArray<NSNumber*> * allAvailableStringEncodings(void)
 			NSMutableArray * looseImages = [NSMutableArray array];
 			for(NSString * path in filenames)
 			{
-				if([[TSSTManagedArchive archiveExtensions] containsObject: [[path pathExtension] lowercaseString]])
+				if(sc_archive_is_supported([path UTF8String]))
 				{
 					session = [self newSessionWithFiles: @[path]];
 					[self windowForSession: session];
@@ -655,7 +656,7 @@ static NSArray<NSNumber*> * allAvailableStringEncodings(void)
 					mgroup.name = path.lastPathComponent;
 					[mgroup nestedFolderContents];
 				}
-				else if([[TSSTManagedArchive archiveExtensions] containsObject: fileExtension])
+				else if(sc_archive_is_supported([path.path UTF8String]))
 				{
 					mgroup = [NSEntityDescription insertNewObjectForEntityForName: @"Archive" inManagedObjectContext: [self managedObjectContext]];
 					mgroup.fileURL = path;

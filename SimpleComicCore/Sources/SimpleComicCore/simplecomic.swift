@@ -1082,6 +1082,19 @@ fileprivate struct FfiConverterSequenceTypeThumbnailRecord: FfiConverterRustBuff
     }
 }
 /**
+ * Return true if the file at `archive_path` is a supported archive.
+ *
+ * Checks the file extension first; falls back to magic-byte detection for
+ * unknown extensions.  Directories always return true.
+ */
+public func archiveIsSupported(archivePath: String) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_simplecomic_fn_func_archive_is_supported(
+        FfiConverterString.lower(archivePath),$0
+    )
+})
+}
+/**
  * List all image pages in an archive, sorted in natural order.
  *
  * Supported formats: ZIP/CBZ, TAR (plain/gz/bz2/xz), 7z, RAR/CBR, directory.
@@ -1206,6 +1219,9 @@ private let initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_simplecomic_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if (uniffi_simplecomic_checksum_func_archive_is_supported() != 57715) {
+        return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_simplecomic_checksum_func_archive_list_pages() != 35364) {
         return InitializationResult.apiChecksumMismatch

@@ -88,6 +88,27 @@ pub extern "C" fn sc_version() -> *const std::ffi::c_char {
 
 // ── Archive namespace functions (UDL `namespace simplecomic`) ─────────────────
 
+pub fn archive_is_supported(archive_path: &str) -> bool {
+    sc_archive::is_archive_supported(std::path::Path::new(archive_path))
+}
+
+/// C-callable: returns true if the NUL-terminated UTF-8 `path` is a supported archive.
+///
+/// # Safety
+/// `path` must be a valid NUL-terminated C string. Null pointer returns false.
+#[no_mangle]
+pub unsafe extern "C" fn sc_archive_is_supported(path: *const std::ffi::c_char) -> bool {
+    if path.is_null() {
+        return false;
+    }
+    let cstr = unsafe { std::ffi::CStr::from_ptr(path) };
+    let s = match cstr.to_str() {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    sc_archive::is_archive_supported(std::path::Path::new(s))
+}
+
 pub fn archive_list_pages(archive_path: &str) -> Result<Vec<ArchiveEntryRecord>, ScError> {
     let archive =
         sc_archive::open_archive(std::path::Path::new(archive_path)).map_err(ScError::from)?;

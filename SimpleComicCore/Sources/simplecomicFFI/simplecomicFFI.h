@@ -251,6 +251,11 @@ typedef void (*UniffiForeignFutureCompleteVoid)(uint64_t, UniffiForeignFutureStr
     );
 
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_ARCHIVE_IS_SUPPORTED
+#define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_ARCHIVE_IS_SUPPORTED
+int8_t uniffi_simplecomic_fn_func_archive_is_supported(RustBuffer archive_path, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_ARCHIVE_LIST_PAGES
 #define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_ARCHIVE_LIST_PAGES
 RustBuffer uniffi_simplecomic_fn_func_archive_list_pages(RustBuffer archive_path, RustCallStatus *_Nonnull out_status
@@ -575,6 +580,12 @@ void ffi_simplecomic_rust_future_free_void(uint64_t handle
 #ifndef UNIFFI_FFIDEF_FFI_SIMPLECOMIC_RUST_FUTURE_COMPLETE_VOID
 #define UNIFFI_FFIDEF_FFI_SIMPLECOMIC_RUST_FUTURE_COMPLETE_VOID
 void ffi_simplecomic_rust_future_complete_void(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_ARCHIVE_IS_SUPPORTED
+#define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_ARCHIVE_IS_SUPPORTED
+uint16_t uniffi_simplecomic_checksum_func_archive_is_supported(void
+    
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_ARCHIVE_LIST_PAGES

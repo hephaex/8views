@@ -15,6 +15,28 @@ pub use reader::{ArchiveEntry, ArchiveReader};
 use anyhow::Result;
 use std::path::Path;
 
+const SUPPORTED_EXTENSIONS: &[&str] = &[
+    "zip", "cbz", "tar", "gz", "tgz", "bz2", "tbz2", "xz", "txz", "7z", "rar", "cbr",
+];
+
+/// Return true if `path` is a supported archive (by extension, directory, or magic bytes).
+pub fn is_archive_supported(path: &Path) -> bool {
+    if path.is_dir() {
+        return true;
+    }
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase());
+    if let Some(e) = ext.as_deref() {
+        if SUPPORTED_EXTENSIONS.contains(&e) {
+            return true;
+        }
+    }
+    // Unknown/missing extension — try magic bytes.
+    !matches!(detect::detect_format(path), detect::ArchiveFormat::Unknown)
+}
+
 /// Open an archive at the given path, dispatching to the appropriate reader
 /// based on file extension.
 pub fn open_archive(path: &Path) -> Result<Box<dyn ArchiveReader>> {

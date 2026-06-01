@@ -22,6 +22,12 @@ namespace simplecomic {
     // These functions map 1:1 to sc_archive public API.  The open+dispatch
     // logic lives in sc_archive::open_archive; sc-ffi owns only the FFI glue.
 
+    /// Return true if the file at `archive_path` is a supported archive.
+    ///
+    /// Checks the file extension first; falls back to magic-byte detection for
+    /// unknown extensions.  Directories always return true.
+    boolean archive_is_supported([ByRef] string archive_path);
+
     /// List all image pages in an archive, sorted in natural order.
     ///
     /// Supported formats: ZIP/CBZ, TAR (plain/gz/bz2/xz), 7z, RAR/CBR, directory.
