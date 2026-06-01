@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 14 완료 (Phase 6 — 세션 저장/복원 → Rust SessionManager)
+> 현재 Phase: Sprint 15 완료 (Phase 6 — 썸네일 Rust + 세션 완성)
 
 ---
 
@@ -488,6 +488,24 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - `SessionManager::exists()` 추가 (sc-storage)
 
 **Dual-write 전략**: Core Data + Rust 양쪽 동시 유지. 다음 스프린트에서 Core Data 제거.
+
+### Sprint 15 — Phase 6: 스크롤 복원 + 세션 삭제 + Rust 썸네일 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (변화 없음) |
+| clippy | 경고 0 |
+| 커밋 | 1006fa8 |
+
+**배선 완료 (5/6 Phase 6):**
+- 세션 스크롤 복원: Rust scroll_x/y → NSKeyedArchived NSData → `session.scrollPosition`
+- 세션 삭제 동기화: `endSession:` → `sc_session_delete_c` (Core Data + Rust 동시 삭제)
+- `sc_thumbnail_from_bytes` C FFI: Rust Lanczos3 스케일링 → RGBA bytes
+- `TSSTPage.prepThumbnail` → Rust 우선, AppKit 폴백 (GIF 등)
+- 세션 Phase 6 완성: 저장/복원/삭제 모두 Rust 동기화
+
+**Phase 6 잔여:**
+- `TSSTPageView.m` — 이미지 렌더링 → Rust 파이프라인 (스케일+컴포지팅)
 
 ---
 
