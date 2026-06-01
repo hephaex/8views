@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 13 완료 (Phase 6 — nestedArchiveContents 열거 → Rust ScPageList)
+> 현재 Phase: Sprint 14 완료 (Phase 6 — 세션 저장/복원 → Rust SessionManager)
 
 ---
 
@@ -470,6 +470,25 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 **Phase 2 (nested archive/PDF) XADMaster 잔존 (edge case):**
 - Sprint 14 TODO: `sc_archive_read_entry_bytes(path, index)` 일반 엔트리 API 추가
 
+### Sprint 14 — Phase 6: 세션 저장/복원 → Rust SessionManager (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (sc-ffi: 20 pass, +4 신규) |
+| clippy | 경고 0 |
+| 커밋 | 72d19de |
+
+**배선 완료 (4/6 Phase 6):**
+- `ScSessionState` repr(C) 구조체 + 3개 C FFI (load/save/delete)
+- `sc_session_load`: 레코드 없으면 false 반환 (Default state와 구별 가능)
+- `TSSTSessionWindowController`:
+  - `restoreSession`: Rust 레코드 있으면 Core Data 오버라이드
+  - `prepareToEnd`: 창 닫을 때 Rust SessionManager에 저장 (dual-write)
+  - `saveSessionToRust`: scrollPosition NSData → ScSessionState 변환 포함
+- `SessionManager::exists()` 추가 (sc-storage)
+
+**Dual-write 전략**: Core Data + Rust 양쪽 동시 유지. 다음 스프린트에서 Core Data 제거.
+
 ---
 
-*최종 업데이트: 2026-06-01*
+*최종 업데이트: 2026-06-02*
