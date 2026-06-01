@@ -1,9 +1,19 @@
-use anyhow::Result;
-use rusqlite::{params, Connection};
+use anyhow::{Context, Result};
+use rusqlite::{params, Connection, OptionalExtension};
 use sc_core::types::{PageOrder, Rotation, ScaleMode};
 use serde::{Deserialize, Serialize};
 
 use crate::migration::run_migrations;
+
+/// Metadata record for a single page within an archive.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageRecord {
+    pub session_id: i64,
+    pub page_index: u32,
+    pub filename: String,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionState {
@@ -155,6 +165,130 @@ impl SessionManager {
         )?;
         Ok(())
     }
+
+    /// Insert or update metadata for all pages of an archive.
+    ///
+    /// Creates the session record if it doesn't exist, then replaces the full
+    /// set of page metadata records for that session in a single transaction.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database operation fails.
+    pub fn upsert_page_metadata(&self, archive_path: &str, pages: &[PageRecord]) -> Result<()> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        self.conn.execute(
+            "INSERT INTO sessions (path, created_at, updated_at) VALUES (?1, ?2, ?2)
+             ON CONFLICT(path) DO UPDATE SET updated_at = ?2",
+            params![archive_path, now],
+        )?;
+
+        let session_id: i64 = self
+            .conn
+            .query_row(
+                "SELECT id FROM sessions WHERE path = ?1",
+                params![archive_path],
+                |row| row.get(0),
+            )
+            .context("session not found after upsert")?;
+
+        self.conn.execute(
+            "DELETE FROM page_metadata WHERE session_id = ?1",
+            params![session_id],
+        )?;
+
+        let mut stmt = self.conn.prepare(
+            "INSERT INTO page_metadata (session_id, page_index, filename, width, height)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+        )?;
+
+        for page in pages {
+            stmt.execute(params![
+                session_id,
+                page.page_index as i64,
+                page.filename,
+                page.width.map(|w| w as i64),
+                page.height.map(|h| h as i64),
+            ])?;
+        }
+
+        Ok(())
+    }
+
+    /// Get all page metadata for an archive, sorted by `page_index`.
+    ///
+    /// Returns an empty `Vec` if no metadata has been stored for the archive.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database operation fails.
+    pub fn get_page_metadata(&self, archive_path: &str) -> Result<Vec<PageRecord>> {
+        let session_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM sessions WHERE path = ?1",
+                params![archive_path],
+                |row| row.get(0),
+            )
+            .optional()
+            .context("failed to query session")?;
+
+        let Some(session_id) = session_id else {
+            return Ok(Vec::new());
+        };
+
+        let mut stmt = self.conn.prepare(
+            "SELECT session_id, page_index, filename, width, height
+             FROM page_metadata
+             WHERE session_id = ?1
+             ORDER BY page_index",
+        )?;
+
+        let records = stmt
+            .query_map(params![session_id], |row| {
+                Ok(PageRecord {
+                    session_id: row.get(0)?,
+                    page_index: row.get::<_, i64>(1)? as u32,
+                    filename: row.get(2)?,
+                    width: row.get::<_, Option<i64>>(3)?.map(|v| v as u32),
+                    height: row.get::<_, Option<i64>>(4)?.map(|v| v as u32),
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+
+        Ok(records)
+    }
+
+    /// Remove all page metadata for an archive (e.g. when the archive is modified).
+    ///
+    /// Does nothing if no session or metadata exists for the path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database operation fails.
+    pub fn clear_page_metadata(&self, archive_path: &str) -> Result<()> {
+        let session_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM sessions WHERE path = ?1",
+                params![archive_path],
+                |row| row.get(0),
+            )
+            .optional()
+            .context("failed to query session")?;
+
+        if let Some(session_id) = session_id {
+            self.conn.execute(
+                "DELETE FROM page_metadata WHERE session_id = ?1",
+                params![session_id],
+            )?;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -205,5 +339,84 @@ mod tests {
         mgr.delete("/test.cbz").unwrap();
         let loaded = mgr.load("/test.cbz").unwrap();
         assert_eq!(loaded.page_index, 0);
+    }
+
+    fn make_pages(session_id: i64, count: u32) -> Vec<PageRecord> {
+        (0..count)
+            .map(|i| PageRecord {
+                session_id,
+                page_index: i,
+                filename: format!("page{i:03}.png"),
+                width: Some(800),
+                height: Some(1200),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn page_metadata_upsert_and_get() {
+        let mgr = SessionManager::open_in_memory().unwrap();
+        mgr.save("/comic.cbz", &SessionState::default()).unwrap();
+
+        let pages = make_pages(0, 3); // session_id placeholder — upsert_page_metadata resolves it
+        mgr.upsert_page_metadata("/comic.cbz", &pages).unwrap();
+
+        let result = mgr.get_page_metadata("/comic.cbz").unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].filename, "page000.png");
+        assert_eq!(result[2].page_index, 2);
+    }
+
+    #[test]
+    fn page_metadata_update_replaces() {
+        let mgr = SessionManager::open_in_memory().unwrap();
+        mgr.save("/comic.cbz", &SessionState::default()).unwrap();
+
+        let first = make_pages(0, 3);
+        mgr.upsert_page_metadata("/comic.cbz", &first).unwrap();
+
+        // Replace with a different 2-page set.
+        let second: Vec<PageRecord> = (0..2u32)
+            .map(|i| PageRecord {
+                session_id: 0,
+                page_index: i,
+                filename: format!("new{i:03}.jpg"),
+                width: None,
+                height: None,
+            })
+            .collect();
+        mgr.upsert_page_metadata("/comic.cbz", &second).unwrap();
+
+        let result = mgr.get_page_metadata("/comic.cbz").unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].filename, "new000.jpg");
+    }
+
+    #[test]
+    fn page_metadata_clear() {
+        let mgr = SessionManager::open_in_memory().unwrap();
+        mgr.save("/comic.cbz", &SessionState::default()).unwrap();
+
+        let pages = make_pages(0, 3);
+        mgr.upsert_page_metadata("/comic.cbz", &pages).unwrap();
+        mgr.clear_page_metadata("/comic.cbz").unwrap();
+
+        let result = mgr.get_page_metadata("/comic.cbz").unwrap();
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn page_metadata_cascade_delete() {
+        let mgr = SessionManager::open_in_memory().unwrap();
+        mgr.save("/comic.cbz", &SessionState::default()).unwrap();
+
+        let pages = make_pages(0, 3);
+        mgr.upsert_page_metadata("/comic.cbz", &pages).unwrap();
+
+        // Deleting the session must cascade to page_metadata.
+        mgr.delete("/comic.cbz").unwrap();
+
+        let result = mgr.get_page_metadata("/comic.cbz").unwrap();
+        assert_eq!(result.len(), 0);
     }
 }

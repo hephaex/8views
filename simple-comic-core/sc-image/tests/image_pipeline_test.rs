@@ -216,3 +216,55 @@ fn rotate_270_swaps_on_non_square() {
         "R270 must swap: height becomes original width"
     );
 }
+
+// ── Format coverage tests ─────────────────────────────────────────────────────
+
+fn make_format_bytes(fmt: image::ImageFormat) -> Vec<u8> {
+    let img = DynamicImage::new_rgb8(2, 2);
+    let mut buf = Vec::new();
+    img.write_to(&mut std::io::Cursor::new(&mut buf), fmt)
+        .expect("format write failed");
+    buf
+}
+
+#[test]
+fn load_jpeg_bytes() {
+    let bytes = make_format_bytes(image::ImageFormat::Jpeg);
+    assert!(!bytes.is_empty());
+    assert_eq!(&bytes[0..2], &[0xFF, 0xD8], "JPEG magic");
+    let (img, meta) =
+        sc_image::ImageLoader::load_bytes(&bytes, "test.jpg", 0).expect("JPEG load failed");
+    assert_eq!(img.width(), 2);
+    assert_eq!(meta.filename, "test.jpg");
+}
+
+#[test]
+fn load_webp_bytes() {
+    let bytes = make_format_bytes(image::ImageFormat::WebP);
+    assert!(!bytes.is_empty());
+    // WebP RIFF header: RIFF....WEBP
+    assert_eq!(&bytes[0..4], b"RIFF", "WebP RIFF header");
+    let (img, _meta) =
+        sc_image::ImageLoader::load_bytes(&bytes, "test.webp", 1).expect("WebP load failed");
+    assert_eq!(img.width(), 2);
+}
+
+#[test]
+fn load_gif_bytes() {
+    let bytes = make_format_bytes(image::ImageFormat::Gif);
+    assert!(!bytes.is_empty());
+    assert_eq!(&bytes[0..3], b"GIF", "GIF header");
+    let (img, _meta) =
+        sc_image::ImageLoader::load_bytes(&bytes, "test.gif", 2).expect("GIF load failed");
+    assert_eq!(img.width(), 2);
+}
+
+#[test]
+fn load_bmp_bytes() {
+    let bytes = make_format_bytes(image::ImageFormat::Bmp);
+    assert!(!bytes.is_empty());
+    assert_eq!(&bytes[0..2], b"BM", "BMP magic");
+    let (img, _meta) =
+        sc_image::ImageLoader::load_bytes(&bytes, "test.bmp", 3).expect("BMP load failed");
+    assert_eq!(img.width(), 2);
+}

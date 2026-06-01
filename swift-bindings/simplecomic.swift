@@ -807,6 +807,116 @@ public func FfiConverterTypeSessionStateRecord_lower(_ value: SessionStateRecord
 }
 
 
+public struct ThumbnailRecord {
+    /**
+     * Page index (zero-based, matches ArchiveEntryRecord.index).
+     */
+    public var index: UInt32
+    /**
+     * Thumbnail image as raw RGBA bytes (width × height × 4).
+     */
+    public var rgbaBytes: Data
+    /**
+     * Width of the thumbnail in pixels.
+     */
+    public var width: UInt32
+    /**
+     * Height of the thumbnail in pixels.
+     */
+    public var height: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Page index (zero-based, matches ArchiveEntryRecord.index).
+         */index: UInt32, 
+        /**
+         * Thumbnail image as raw RGBA bytes (width × height × 4).
+         */rgbaBytes: Data, 
+        /**
+         * Width of the thumbnail in pixels.
+         */width: UInt32, 
+        /**
+         * Height of the thumbnail in pixels.
+         */height: UInt32) {
+        self.index = index
+        self.rgbaBytes = rgbaBytes
+        self.width = width
+        self.height = height
+    }
+}
+
+#if compiler(>=6)
+extension ThumbnailRecord: Sendable {}
+#endif
+
+
+extension ThumbnailRecord: Equatable, Hashable {
+    public static func ==(lhs: ThumbnailRecord, rhs: ThumbnailRecord) -> Bool {
+        if lhs.index != rhs.index {
+            return false
+        }
+        if lhs.rgbaBytes != rhs.rgbaBytes {
+            return false
+        }
+        if lhs.width != rhs.width {
+            return false
+        }
+        if lhs.height != rhs.height {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(index)
+        hasher.combine(rgbaBytes)
+        hasher.combine(width)
+        hasher.combine(height)
+    }
+}
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeThumbnailRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ThumbnailRecord {
+        return
+            try ThumbnailRecord(
+                index: FfiConverterUInt32.read(from: &buf), 
+                rgbaBytes: FfiConverterData.read(from: &buf), 
+                width: FfiConverterUInt32.read(from: &buf), 
+                height: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ThumbnailRecord, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.index, into: &buf)
+        FfiConverterData.write(value.rgbaBytes, into: &buf)
+        FfiConverterUInt32.write(value.width, into: &buf)
+        FfiConverterUInt32.write(value.height, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeThumbnailRecord_lift(_ buf: RustBuffer) throws -> ThumbnailRecord {
+    return try FfiConverterTypeThumbnailRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeThumbnailRecord_lower(_ value: ThumbnailRecord) -> RustBuffer {
+    return FfiConverterTypeThumbnailRecord.lower(value)
+}
+
+
 public enum ScError: Swift.Error {
 
     
@@ -946,6 +1056,31 @@ fileprivate struct FfiConverterSequenceTypeArchiveEntryRecord: FfiConverterRustB
         return seq
     }
 }
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeThumbnailRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [ThumbnailRecord]
+
+    public static func write(_ value: [ThumbnailRecord], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeThumbnailRecord.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ThumbnailRecord] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ThumbnailRecord]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeThumbnailRecord.read(from: &buf))
+        }
+        return seq
+    }
+}
 /**
  * List all image pages in an archive, sorted in natural order.
  *
@@ -982,6 +1117,34 @@ public func archiveReadPage(archivePath: String, index: UInt32)throws  -> Data  
     uniffi_simplecomic_fn_func_archive_read_page(
         FfiConverterString.lower(archivePath),
         FfiConverterUInt32.lower(index),$0
+    )
+})
+}
+/**
+ * Generate thumbnails for all pages of an archive in parallel.
+ *
+ * Returns one ThumbnailRecord per page, sorted by page index.
+ * Pages that fail to decode are silently skipped.
+ */
+public func generateArchiveThumbnails(archivePath: String, thumbSize: UInt32)throws  -> [ThumbnailRecord]  {
+    return try  FfiConverterSequenceTypeThumbnailRecord.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
+    uniffi_simplecomic_fn_func_generate_archive_thumbnails(
+        FfiConverterString.lower(archivePath),
+        FfiConverterUInt32.lower(thumbSize),$0
+    )
+})
+}
+/**
+ * Generate a thumbnail for a single page's raw image bytes.
+ *
+ * Returns the thumbnail as raw RGBA bytes (width × height × 4).
+ * `thumb_size` is the maximum edge length (thumbnail is fit within a square).
+ */
+public func generateThumbnail(imageBytes: Data, thumbSize: UInt32)throws  -> Data  {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
+    uniffi_simplecomic_fn_func_generate_thumbnail(
+        FfiConverterData.lower(imageBytes),
+        FfiConverterUInt32.lower(thumbSize),$0
     )
 })
 }
@@ -1051,6 +1214,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_simplecomic_checksum_func_archive_read_page() != 11047) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_simplecomic_checksum_func_generate_archive_thumbnails() != 26387) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_simplecomic_checksum_func_generate_thumbnail() != 61945) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_simplecomic_checksum_func_sc_library_version() != 56668) {

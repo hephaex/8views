@@ -266,6 +266,16 @@ RustBuffer uniffi_simplecomic_fn_func_archive_read_first_image(RustBuffer archiv
 RustBuffer uniffi_simplecomic_fn_func_archive_read_page(RustBuffer archive_path, uint32_t index, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_GENERATE_ARCHIVE_THUMBNAILS
+#define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_GENERATE_ARCHIVE_THUMBNAILS
+RustBuffer uniffi_simplecomic_fn_func_generate_archive_thumbnails(RustBuffer archive_path, uint32_t thumb_size, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_GENERATE_THUMBNAIL
+#define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_GENERATE_THUMBNAIL
+RustBuffer uniffi_simplecomic_fn_func_generate_thumbnail(RustBuffer image_bytes, uint32_t thumb_size, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_SC_LIBRARY_VERSION
 #define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_FN_FUNC_SC_LIBRARY_VERSION
 RustBuffer uniffi_simplecomic_fn_func_sc_library_version(RustCallStatus *_Nonnull out_status
@@ -582,6 +592,18 @@ uint16_t uniffi_simplecomic_checksum_func_archive_read_first_image(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_ARCHIVE_READ_PAGE
 #define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_ARCHIVE_READ_PAGE
 uint16_t uniffi_simplecomic_checksum_func_archive_read_page(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_GENERATE_ARCHIVE_THUMBNAILS
+#define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_GENERATE_ARCHIVE_THUMBNAILS
+uint16_t uniffi_simplecomic_checksum_func_generate_archive_thumbnails(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_GENERATE_THUMBNAIL
+#define UNIFFI_FFIDEF_UNIFFI_SIMPLECOMIC_CHECKSUM_FUNC_GENERATE_THUMBNAIL
+uint16_t uniffi_simplecomic_checksum_func_generate_thumbnail(void
     
 );
 #endif
