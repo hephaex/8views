@@ -49,6 +49,39 @@ uint8_t * _Nullable sc_archive_read_page(
 /// Passing NULL is safe (no-op).
 void sc_free_bytes(uint8_t * _Nullable ptr, size_t len);
 
+// ── ScPageList — open-once archive enumeration ────────────────────────────────
+
+/// Opaque handle returned by sc_archive_open_pages.
+/// Opens the archive once and caches all page metadata.
+/// Must be released with sc_archive_pages_free.
+typedef struct ScPageList ScPageList;
+
+/// Open archive_path and collect all page metadata into an opaque ScPageList.
+///
+/// Returns a non-null ScPageList on success (release with sc_archive_pages_free).
+/// Returns NULL on error; sets *error_code_out to SCArchiveErrorIO or
+/// SCArchiveErrorUnsupported.  error_code_out may be NULL.
+///
+/// archive_path must be a valid NUL-terminated UTF-8 C string.
+ScPageList * _Nullable sc_archive_open_pages(
+    const char * _Nonnull archive_path,
+    int32_t * _Nullable error_code_out
+);
+
+/// Return the total number of image pages in list.
+uint32_t sc_page_list_count(const ScPageList * _Nonnull list);
+
+/// Return the NUL-terminated filename for page at index.
+/// The pointer is valid until sc_archive_pages_free is called on list.
+/// Returns NULL if index is out of range. Do NOT free the returned pointer.
+const char * _Nullable sc_page_list_name(const ScPageList * _Nonnull list, uint32_t index);
+
+/// Return the uncompressed byte size of page at index. Returns 0 if out of range.
+uint64_t sc_page_list_size(const ScPageList * _Nonnull list, uint32_t index);
+
+/// Free a ScPageList returned by sc_archive_open_pages. NULL is safe.
+void sc_archive_pages_free(ScPageList * _Nullable list);
+
 #ifdef __cplusplus
 }
 #endif

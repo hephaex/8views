@@ -86,6 +86,114 @@ pub extern "C" fn sc_version() -> *const std::ffi::c_char {
     c"0.1.0".as_ptr()
 }
 
+// ── ScPageList opaque handle — open-once enumeration ─────────────────────────
+
+/// Opaque type returned by `sc_archive_open_pages`.
+///
+/// Holds all page-metadata from a single archive open.  The archive is opened
+/// and fully indexed once; callers query entries without re-opening.
+/// `filenames` are NUL-terminated `CString` values parallel to `entries`;
+/// pointers returned by `sc_page_list_name` are valid until `sc_archive_pages_free`.
+pub struct ScPageList {
+    entries: Vec<sc_archive::ArchiveEntry>,
+    /// NUL-terminated filename for each entry, kept alive for `sc_page_list_name`.
+    filenames: Vec<std::ffi::CString>,
+}
+
+/// C-callable: open an archive and collect all page-metadata in one shot.
+///
+/// Returns an opaque `ScPageList *` on success.  Caller must release it with
+/// `sc_archive_pages_free`.  Returns NULL on error and sets `*error_code_out`:
+///   1 = I/O / open error
+///   3 = unsupported format
+///
+/// # Safety
+/// `archive_path` must be a valid NUL-terminated UTF-8 C string.
+#[no_mangle]
+pub unsafe extern "C" fn sc_archive_open_pages(
+    archive_path: *const std::ffi::c_char,
+    error_code_out: *mut i32,
+) -> *mut ScPageList {
+    let set_err = |code: i32| {
+        if !error_code_out.is_null() {
+            *error_code_out = code;
+        }
+    };
+    if archive_path.is_null() {
+        set_err(1);
+        return std::ptr::null_mut();
+    }
+    let path_str = match std::ffi::CStr::from_ptr(archive_path).to_str() {
+        Ok(s) => s,
+        Err(_) => { set_err(1); return std::ptr::null_mut(); }
+    };
+    let archive = match sc_archive::open_archive(std::path::Path::new(path_str)) {
+        Ok(a) => a,
+        Err(e) => {
+            let msg = e.to_string();
+            set_err(if msg.contains("unsupported") { 3 } else { 1 });
+            return std::ptr::null_mut();
+        }
+    };
+    let entries = archive.entries().to_vec();
+    let filenames = entries
+        .iter()
+        .map(|e| std::ffi::CString::new(e.filename.as_bytes()).unwrap_or_default())
+        .collect();
+    set_err(0);
+    Box::into_raw(Box::new(ScPageList { entries, filenames }))
+}
+
+/// Return the number of pages in `list`.
+///
+/// # Safety
+/// `list` must be a non-null pointer returned by `sc_archive_open_pages`.
+#[no_mangle]
+pub unsafe extern "C" fn sc_page_list_count(list: *const ScPageList) -> u32 {
+    (&(*list).entries).len() as u32
+}
+
+/// Return the NUL-terminated filename for entry `index` in `list`.
+///
+/// The returned pointer is valid until `sc_archive_pages_free` is called.
+/// Do NOT free the pointer separately.  Returns NULL if `index` is out of range.
+///
+/// # Safety
+/// `list` must be a valid non-null `ScPageList` pointer.
+#[no_mangle]
+pub unsafe extern "C" fn sc_page_list_name(
+    list: *const ScPageList,
+    index: u32,
+) -> *const std::ffi::c_char {
+    match (&(*list).filenames).get(index as usize) {
+        Some(cs) => cs.as_ptr(),
+        None => std::ptr::null(),
+    }
+}
+
+/// Return the uncompressed byte-size of entry `index` in `list`.  Returns 0 if out of range.
+///
+/// # Safety
+/// `list` must be a valid non-null `ScPageList` pointer.
+#[no_mangle]
+pub unsafe extern "C" fn sc_page_list_size(list: *const ScPageList, index: u32) -> u64 {
+    match (&(*list).entries).get(index as usize) {
+        Some(e) => e.size,
+        None => 0,
+    }
+}
+
+/// Free an `ScPageList` returned by `sc_archive_open_pages`.  NULL is safe.
+///
+/// # Safety
+/// `list` must have been returned by `sc_archive_open_pages`.
+#[no_mangle]
+pub unsafe extern "C" fn sc_archive_pages_free(list: *mut ScPageList) {
+    if !list.is_null() {
+        drop(Box::from_raw(list));
+    }
+}
+
 // ── Archive namespace functions (UDL `namespace simplecomic`) ─────────────────
 
 pub fn archive_is_supported(archive_path: &str) -> bool {
@@ -470,5 +578,64 @@ mod tests {
     fn c_ffi_free_bytes_null_safe() {
         // Must not panic or crash
         unsafe { sc_free_bytes(std::ptr::null_mut(), 0) };
+    }
+
+    // ── ScPageList C FFI tests ────────────────────────────────────────────────
+
+    #[test]
+    fn page_list_open_and_enumerate() {
+        let tmp = make_test_cbz(3);
+        let path = std::ffi::CString::new(tmp.path().to_str().unwrap()).unwrap();
+        let mut err: i32 = -1;
+        let list = unsafe { sc_archive_open_pages(path.as_ptr(), &mut err) };
+        assert!(!list.is_null(), "expected non-null ScPageList");
+        assert_eq!(err, 0);
+        let count = unsafe { sc_page_list_count(list) };
+        assert_eq!(count, 3);
+        for i in 0..count {
+            let name_ptr = unsafe { sc_page_list_name(list, i) };
+            assert!(!name_ptr.is_null());
+            let name = unsafe { std::ffi::CStr::from_ptr(name_ptr) }
+                .to_str()
+                .expect("valid UTF-8");
+            assert!(name.ends_with(".png"), "expected .png, got {name}");
+        }
+        unsafe { sc_archive_pages_free(list) };
+    }
+
+    #[test]
+    fn page_list_null_path_returns_null() {
+        let mut err: i32 = 0;
+        let list = unsafe { sc_archive_open_pages(std::ptr::null(), &mut err) };
+        assert!(list.is_null());
+        assert_eq!(err, 1);
+    }
+
+    #[test]
+    fn page_list_missing_archive_returns_null() {
+        let path = std::ffi::CString::new("/no/such/archive.cbz").unwrap();
+        let mut err: i32 = 0;
+        let list = unsafe { sc_archive_open_pages(path.as_ptr(), &mut err) };
+        assert!(list.is_null());
+        assert!(err != 0);
+    }
+
+    #[test]
+    fn page_list_out_of_range_returns_null() {
+        let tmp = make_test_cbz(2);
+        let path = std::ffi::CString::new(tmp.path().to_str().unwrap()).unwrap();
+        let list = unsafe { sc_archive_open_pages(path.as_ptr(), std::ptr::null_mut()) };
+        assert!(!list.is_null());
+        assert_eq!(unsafe { sc_page_list_count(list) }, 2);
+        let bad_name = unsafe { sc_page_list_name(list, 999) };
+        assert!(bad_name.is_null());
+        let bad_size = unsafe { sc_page_list_size(list, 999) };
+        assert_eq!(bad_size, 0);
+        unsafe { sc_archive_pages_free(list) };
+    }
+
+    #[test]
+    fn page_list_free_null_safe() {
+        unsafe { sc_archive_pages_free(std::ptr::null_mut()) };
     }
 }

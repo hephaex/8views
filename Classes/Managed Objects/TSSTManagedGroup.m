@@ -416,94 +416,96 @@
 
 - (void)nestedArchiveContents
 {
-	XADArchive * imageArchive = self.instance;
-	
-	NSFileManager * fileManager = [NSFileManager defaultManager];
-	NSData * fileData;
-	NSInteger collision = 0;
-	NSString * archivePath = nil;
-	const NSInteger archivedFilesCount = [imageArchive numberOfEntries];
-	NSError * error;
-	if([imageArchive isSolid])
-	{
-		do {
-			archivePath = [NSString stringWithFormat: @"SC-images-%li", (long)collision];
-			archivePath = [NSTemporaryDirectory() stringByAppendingPathComponent: archivePath];
-			++collision;
-		} while (![fileManager createDirectoryAtPath: archivePath withIntermediateDirectories: YES attributes: nil error: &error]);
-		self.solidDirectory = archivePath;
+	NSString *archivePath = self.fileURL.path;
+	if (!archivePath) return;
+
+	// Phase 1: Enumerate image pages via Rust.
+	// sc_archive_open_pages returns only image entries in natural-sort order.
+	// The loop index i is the Rust-side index used by sc_archive_read_page — must match.
+	int32_t errCode = 0;
+	ScPageList *pages = sc_archive_open_pages(archivePath.UTF8String, &errCode);
+	if (pages) {
+		uint32_t count = sc_page_list_count(pages);
+		for (uint32_t i = 0; i < count; i++) {
+			const char *rawName = sc_page_list_name(pages, i);
+			if (!rawName) continue;
+			NSString *fileName = [NSString stringWithUTF8String:rawName];
+			if (!fileName || fileName.length == 0) continue;
+			if ([[[fileName lastPathComponent] substringToIndex:1] isEqualToString:@"."]) continue;
+
+			TSSTManagedGroup *entry = [NSEntityDescription
+				insertNewObjectForEntityForName:@"Image"
+				inManagedObjectContext:[self managedObjectContext]];
+			[entry setValue:fileName forKey:@"imagePath"];
+			[entry setValue:@(i) forKey:@"index"];
+			entry.group = self;
+		}
+		sc_archive_pages_free(pages);
 	}
-	
-	for (NSInteger counter = 0; counter < archivedFilesCount; ++counter)
-	{
-		NSString *fileName = [imageArchive nameOfEntry: counter];
+
+	// Phase 2: Handle nested archives and PDFs via XADMaster (edge cases only).
+	// TODO(phase6/sprint14): replace with Rust bulk-read API when sc_archive_read_page
+	// supports non-image entry extraction.
+	XADArchive *imageArchive = self.instance;
+	if (!imageArchive) return;
+
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	NSData *fileData;
+	NSInteger collision = 0;
+	NSString *tempPath = nil;
+
+	for (NSInteger counter = 0; counter < [imageArchive numberOfEntries]; ++counter) {
+		NSString *fileName = [imageArchive nameOfEntry:counter];
+		if (!fileName || fileName.length == 0) continue;
+		if ([[[fileName lastPathComponent] substringToIndex:1] isEqualToString:@"."]) continue;
+
+		NSString *extension = [[fileName pathExtension] lowercaseString];
 		TSSTManagedGroup *nestedDescription = nil;
-		
-		if(!([fileName isEqualToString: @""] || [[[fileName lastPathComponent] substringToIndex: 1] isEqualToString: @"."]))
-		{
-			NSString *extension = [[fileName pathExtension] lowercaseString];
-			if([[TSSTPage imageExtensions] containsObject: extension])
-			{
-				nestedDescription = [NSEntityDescription insertNewObjectForEntityForName: @"Image" inManagedObjectContext: [self managedObjectContext]];
-				[nestedDescription setValue: fileName forKey: @"imagePath"];
-				[nestedDescription setValue: @(counter) forKey: @"index"];
+
+		if ([[TSSTPage imageExtensions] containsObject:extension]) {
+			// Already handled by Rust above — skip
+			continue;
+		} else if ([[TSSTManagedArchive archiveExtensions] containsObject:extension]) {
+			fileData = [imageArchive contentsOfEntry:counter];
+			nestedDescription = [NSEntityDescription insertNewObjectForEntityForName:@"Archive"
+				inManagedObjectContext:[self managedObjectContext]];
+			nestedDescription.name = fileName;
+			nestedDescription.nested = YES;
+
+			collision = 0;
+			do {
+				tempPath = [NSString stringWithFormat:@"%li-%@", (long)collision, fileName];
+				tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:tempPath];
+				++collision;
+			} while ([fileManager fileExistsAtPath:tempPath]);
+
+			[[NSFileManager defaultManager] createDirectoryAtPath:[tempPath stringByDeletingLastPathComponent]
+									  withIntermediateDirectories:YES attributes:nil error:NULL];
+			[[NSFileManager defaultManager] createFileAtPath:tempPath contents:fileData attributes:nil];
+			nestedDescription.path = tempPath;
+			[(TSSTManagedArchive *)nestedDescription nestedArchiveContents];
+		} else if ([extension isEqualToString:@"pdf"]) {
+			NSString *fullFileName = fileName;
+			fileName = [fileName lastPathComponent];
+			nestedDescription = [NSEntityDescription insertNewObjectForEntityForName:@"PDF"
+				inManagedObjectContext:[self managedObjectContext]];
+			tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
+			collision = 0;
+			while ([fileManager fileExistsAtPath:tempPath]) {
+				++collision;
+				fileName = [NSString stringWithFormat:@"%li-%@", (long)collision, fileName];
+				tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
 			}
-			else if([[TSSTManagedArchive archiveExtensions] containsObject: extension])
-			{
-				fileData = [imageArchive contentsOfEntry: counter];
-				nestedDescription = [NSEntityDescription insertNewObjectForEntityForName: @"Archive" inManagedObjectContext: [self managedObjectContext]];
-				nestedDescription.name = fileName;
-				nestedDescription.nested = YES;
-				
-				collision = 0;
-				do {
-					archivePath = [NSString stringWithFormat: @"%li-%@", (long)collision, fileName];
-					archivePath = [NSTemporaryDirectory() stringByAppendingPathComponent: archivePath];
-					++collision;
-				} while ([fileManager fileExistsAtPath: archivePath]);
-				
-				[[NSFileManager defaultManager] createDirectoryAtPath: [archivePath stringByDeletingLastPathComponent]
-										  withIntermediateDirectories: YES
-														   attributes: nil
-																error: NULL];
-				[[NSFileManager defaultManager] createFileAtPath: archivePath contents: fileData attributes: nil];
-				
-				nestedDescription.path = archivePath;
-				[(TSSTManagedArchive *)nestedDescription nestedArchiveContents];
-			}
-			else if([[TSSTPage textExtensions] containsObject: extension])
-			{
-				nestedDescription = [NSEntityDescription insertNewObjectForEntityForName: @"Image" inManagedObjectContext: [self managedObjectContext]];
-				[nestedDescription setValue: fileName forKey: @"imagePath"];
-				[nestedDescription setValue: @(counter) forKey: @"index"];
-				[nestedDescription setValue: @YES forKey: @"text"];
-			}
-			else if([extension isEqualToString: @"pdf"])
-			{
-				NSString *fullFileName = fileName;
-				fileName = [fileName lastPathComponent];
-				nestedDescription = [NSEntityDescription insertNewObjectForEntityForName: @"PDF" inManagedObjectContext: [self managedObjectContext]];
-				archivePath = [NSTemporaryDirectory() stringByAppendingPathComponent: fileName];
-				NSInteger collision = 0;
-				while([fileManager fileExistsAtPath: archivePath])
-				{
-					++collision;
-					fileName = [NSString stringWithFormat: @"%li-%@", (long)collision, fileName];
-					archivePath = [NSTemporaryDirectory() stringByAppendingPathComponent: fileName];
-				}
-				fileData = [imageArchive contentsOfEntry: counter];
-				[fileData writeToFile: archivePath atomically: YES];
-				
-				nestedDescription.path = archivePath;
-				nestedDescription.nested = YES;
-				nestedDescription.name = fullFileName;
-				[(TSSTManagedPDF *)nestedDescription pdfContents];
-			}
-			
-			if(nestedDescription)
-			{
-				nestedDescription.group = self;
-			}
+			fileData = [imageArchive contentsOfEntry:counter];
+			[fileData writeToFile:tempPath atomically:YES];
+			nestedDescription.path = tempPath;
+			nestedDescription.nested = YES;
+			nestedDescription.name = fullFileName;
+			[(TSSTManagedPDF *)nestedDescription pdfContents];
+		}
+
+		if (nestedDescription) {
+			nestedDescription.group = self;
 		}
 	}
 }
