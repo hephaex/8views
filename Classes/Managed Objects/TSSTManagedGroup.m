@@ -375,6 +375,10 @@
 }
 
 
+// TODO(phase6/sprint13): solid RAR archives require sequential decompression.
+// Rust opens a fresh archive handle per call, so solid RAR page N costs O(N) decompressions.
+// The old XADMaster solidDirectory disk-cache handled this; a Rust-side page-cache or
+// bulk-prefetch API is needed before removing XADMaster entirely for RAR archives.
 - (void)requestDataForPageIndex:(NSInteger)index completionHandler:(void(^)(NSData *_Nullable pageData, NSError *_Nullable error))callback
 {
 	NSString *archivePath = self.fileURL.path;
@@ -386,7 +390,7 @@
 	int32_t errCode = 0;
 	uint8_t *buf = sc_archive_read_page(archivePath.UTF8String, (uint32_t)index, &outLen, &errCode);
 	if (!buf) {
-		NSError *err = [NSError errorWithDomain:@"SCArchiveErrorDomain" code:errCode userInfo:nil];
+		NSError *err = [NSError errorWithDomain:SCArchiveErrorDomain code:errCode userInfo:nil];
 		callback(nil, err);
 		return;
 	}

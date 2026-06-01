@@ -7,6 +7,17 @@
 extern "C" {
 #endif
 
+/// Error codes returned via the error_code_out parameter of sc_archive_read_page.
+typedef enum SCArchiveError {
+    SCArchiveErrorNone          = 0, ///< Success
+    SCArchiveErrorIO            = 1, ///< I/O error or archive open failure
+    SCArchiveErrorNotFound      = 2, ///< Entry not found (index out of range)
+    SCArchiveErrorUnsupported   = 3, ///< Unsupported archive format
+} SCArchiveError;
+
+/// NSError domain for errors originating from the Rust sc-archive layer.
+#define SCArchiveErrorDomain @"SCArchiveErrorDomain"
+
 /// Returns the library version string (process-lifetime pointer; do not free).
 const char * _Nonnull sc_version(void);
 

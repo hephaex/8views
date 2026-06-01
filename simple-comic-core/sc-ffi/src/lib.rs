@@ -101,8 +101,7 @@ pub unsafe extern "C" fn sc_archive_is_supported(path: *const std::ffi::c_char) 
     if path.is_null() {
         return false;
     }
-    let cstr = unsafe { std::ffi::CStr::from_ptr(path) };
-    let s = match cstr.to_str() {
+    let s = match std::ffi::CStr::from_ptr(path).to_str() {
         Ok(s) => s,
         Err(_) => return false,
     };
@@ -120,7 +119,8 @@ pub unsafe extern "C" fn sc_archive_is_supported(path: *const std::ffi::c_char) 
 ///
 /// # Safety
 /// `archive_path` must be a valid NUL-terminated UTF-8 C string.
-/// `out_len` must be a valid non-null pointer.
+/// `out_len` must be a valid non-null pointer; receives the allocation length that
+/// must be passed verbatim to `sc_free_bytes`.
 /// `error_code_out` may be null (error code is discarded).
 #[no_mangle]
 pub unsafe extern "C" fn sc_archive_read_page(
@@ -131,7 +131,7 @@ pub unsafe extern "C" fn sc_archive_read_page(
 ) -> *mut u8 {
     let set_err = |code: i32| {
         if !error_code_out.is_null() {
-            unsafe { *error_code_out = code; }
+            *error_code_out = code;
         }
     };
 
@@ -139,7 +139,7 @@ pub unsafe extern "C" fn sc_archive_read_page(
         set_err(1);
         return std::ptr::null_mut();
     }
-    let path_str = match unsafe { std::ffi::CStr::from_ptr(archive_path) }.to_str() {
+    let path_str = match std::ffi::CStr::from_ptr(archive_path).to_str() {
         Ok(s) => s,
         Err(_) => { set_err(1); return std::ptr::null_mut(); }
     };
@@ -147,7 +147,7 @@ pub unsafe extern "C" fn sc_archive_read_page(
     match archive_read_page(path_str, index) {
         Ok(bytes) => {
             let boxed: Box<[u8]> = bytes.into_boxed_slice();
-            unsafe { *out_len = boxed.len(); }
+            *out_len = boxed.len();
             set_err(0);
             Box::into_raw(boxed) as *mut u8
         }
@@ -160,12 +160,12 @@ pub unsafe extern "C" fn sc_archive_read_page(
 /// C-callable: free a buffer returned by `sc_archive_read_page`.
 ///
 /// # Safety
-/// `ptr` must have been returned by `sc_archive_read_page` with the same `len`.
-/// Passing NULL is safe (no-op).
+/// `ptr` must have been returned by `sc_archive_read_page` with the exact same `len`
+/// value that was written to `*out_len` at call time.  Passing NULL is safe (no-op).
 #[no_mangle]
 pub unsafe extern "C" fn sc_free_bytes(ptr: *mut u8, len: usize) {
     if !ptr.is_null() {
-        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(ptr, len)) };
+        drop(Box::from_raw(std::slice::from_raw_parts_mut(ptr, len)));
     }
 }
 
