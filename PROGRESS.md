@@ -582,6 +582,22 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - 잘못된 포맷 사용 시: 빨강/알파 채널 뒤바뀜 → 썸네일과 대형 이미지 색상 오류
 - `thumbnail_pixel_order_is_rgba` 회귀 테스트 추가 (bytes[3]=255 확인)
 
+### Sprint 19 — Phase 9: 색상 공간 수정 + README + Push (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass |
+| clippy | 경고 0 |
+| 커밋 | 90e8d2a |
+
+**완료:**
+- `NSDeviceRGBColorSpace` → `NSCalibratedRGBColorSpace` (sRGB 색상 관리 적용)
+  - 만화 이미지는 sRGB 색 공간; P3 디스플레이에서 올바른 색상 매핑
+  - prepThumbnail + pageImage 두 곳
+- README.md: arc 브랜치 Rust 코어 빌드 지침 추가
+- Sprint Completion Gate: 41커밋 → `origin/arc` push 시도
+  - HTTPS 인증 필요 → `git push origin arc` 수동 실행 필요
+
 ---
 
 *최종 업데이트: 2026-06-02*
