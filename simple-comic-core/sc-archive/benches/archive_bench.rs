@@ -16,7 +16,10 @@ const MINIMAL_PNG: &[u8] = &[
 /// 지정된 페이지 수의 CBZ(ZIP) 파일을 임시 디렉토리에 생성한다.
 /// 각 페이지는 MINIMAL_PNG로 "pageXXX.jpg" 이름으로 저장된다.
 fn make_temp_cbz(page_count: usize) -> NamedTempFile {
-    let mut temp = NamedTempFile::new().expect("Failed to create temp file");
+    let mut temp = tempfile::Builder::new()
+        .suffix(".cbz")
+        .tempfile()
+        .expect("Failed to create temp file");
     let mut writer = ZipWriter::new(&mut temp);
 
     for page_idx in 0..page_count {
