@@ -568,6 +568,20 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - `TSSTManagedArchive.instance`: XADArchive 핸들 (Phase 2 전용)
 - `SimpleComicAppDelegate.archiveTypes`: NSOpenPanel 파일 타입 필터 (UI only)
 
+### Sprint 18 — Phase 9: 긴급 색상 버그 수정 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 23 pass (sc-ffi, +1 신규) |
+| clippy | 경고 0 |
+| 커밋 | 9705dd5 |
+
+**긴급 수정 (Sprint 15/16 도입 버그):**
+- `NSBitmapFormatAlphaFirst` (ARGB = 알파 첫째) → `NSBitmapFormatAlphaNonpremultiplied` (RGBA = 알파 마지막)
+- Rust `image::to_rgba8().into_raw()` = RGBA 순서 (알파 마지막)
+- 잘못된 포맷 사용 시: 빨강/알파 채널 뒤바뀜 → 썸네일과 대형 이미지 색상 오류
+- `thumbnail_pixel_order_is_rgba` 회귀 테스트 추가 (bytes[3]=255 확인)
+
 ---
 
 *최종 업데이트: 2026-06-02*
