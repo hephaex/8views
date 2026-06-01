@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 10 완료 (Phase 3 완료 + Phase 4 시작)
+> 현재 Phase: Sprint 11 완료 (Phase 6 시작 — AppDelegate 배선 1/6)
 
 ---
 
@@ -413,6 +413,22 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - **Phase 3 (이미지 파이프라인) 4/4 완료** — 모든 포맷 커버리지, FFI 노출
 - **Phase 4 시작** — page_metadata 테이블 + CRUD API
 - Swift 바인딩 1,253줄 (thumbnail API 포함)
+
+### Sprint 11 — Phase 6 시작: AppDelegate 아카이브 감지 배선 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (변화 없음) |
+| clippy | 경고 0 |
+| 커밋 | fce18ee |
+
+**배선 완료 (1/6):**
+- `sc-archive::is_archive_supported()` 추가 — 확장자 우선, magic bytes 폴백
+- `sc-ffi`: UDL `archive_is_supported()` + C FFI `sc_archive_is_supported()`
+- `sc_extras.h`: 수동 C 헤더 (ObjC 직접 호출용)
+- `SimpleComicAppDelegate.m` 3곳: `[TSSTManagedArchive archiveExtensions]` → `sc_archive_is_supported()`
+
+**개선점:** 확장자 없는 아카이브도 magic bytes로 정확히 감지 (기존 ObjC 방식 대비)
 
 ---
 
