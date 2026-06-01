@@ -204,6 +204,8 @@ static NSSize monospaceCharacterSize;
 			// Rust to_rgba8().into_raw() → R,G,B,A order (alpha LAST, non-premultiplied).
 			// NSBitmapFormatAlphaNonpremultiplied = alpha last + non-premultiplied.
 			// NSBitmapFormatAlphaFirst would be ARGB (alpha FIRST) — wrong for Rust RGBA.
+			// NSCalibratedRGBColorSpace = sRGB with color management (correct for JPEG/PNG
+			// source images). NSDeviceRGBColorSpace bypasses color management.
 			NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
 				initWithBitmapDataPlanes: NULL
 							  pixelsWide: outW
@@ -212,7 +214,7 @@ static NSSize monospaceCharacterSize;
 						 samplesPerPixel: 4
 								hasAlpha: YES
 								isPlanar: NO
-						  colorSpaceName: NSDeviceRGBColorSpace
+						  colorSpaceName: NSCalibratedRGBColorSpace
 							bitmapFormat: NSBitmapFormatAlphaNonpremultiplied
 							 bytesPerRow: outW * 4
 							bitsPerPixel: 32];
@@ -272,7 +274,7 @@ static const uint32_t kSCMaxInMemoryDimension = 2048;
 
 	if (rgba) {
 		// Large image — use Rust-scaled RGBA as the source.
-		// Rust RGBA → NSBitmapFormatAlphaNonpremultiplied (alpha last, non-premultiplied).
+		// NSCalibratedRGBColorSpace = sRGB; NSBitmapFormatAlphaNonpremultiplied = RGBA order.
 		NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
 			initWithBitmapDataPlanes: NULL
 						  pixelsWide: outW
@@ -281,7 +283,7 @@ static const uint32_t kSCMaxInMemoryDimension = 2048;
 					 samplesPerPixel: 4
 							hasAlpha: YES
 							isPlanar: NO
-					  colorSpaceName: NSDeviceRGBColorSpace
+					  colorSpaceName: NSCalibratedRGBColorSpace
 						bitmapFormat: NSBitmapFormatAlphaNonpremultiplied
 						 bytesPerRow: outW * 4
 						bitsPerPixel: 32];

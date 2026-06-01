@@ -22,6 +22,35 @@ We don't collect any user data in the app itself. We know nothing about you and 
 
 GitHub collects data when you interact with the project here, but we can't change any of that.
 
+## Rust Core (arc branch)
+
+The `arc` branch is an active refactoring to a **Rust core + Swift/ObjC UI** hybrid architecture.
+
+**Status: Phase 6 complete (2026-06-02)**
+
+- Archive reading (ZIP/CBZ/RAR/CBR/7z/TAR) via Rust `sc-archive`
+- Image pipeline (scale, rotate, composite, thumbnail) via Rust `sc-image`
+- Session persistence (SQLite) via Rust `sc-storage`
+- C FFI layer (`sc_extras.h`) bridging Rust → ObjC
+- `SimpleComicCore` Swift Package wrapping the Rust static library
+
+### Building the Rust core
+
+```bash
+cd simple-comic-core
+cargo build --release --package sc-ffi --target aarch64-apple-darwin
+cargo build --release --package sc-ffi --target x86_64-apple-darwin
+lipo -create \
+  target/aarch64-apple-darwin/release/libsimplecomic.a \
+  target/x86_64-apple-darwin/release/libsimplecomic.a \
+  -output ../SimpleComicCore/Libraries/libsimplecomic.a
+
+# Regenerate Swift bindings after UDL changes:
+cargo run --bin uniffi-bindgen -- generate \
+  sc-ffi/src/simplecomic.udl --language swift \
+  --out-dir ../SimpleComicCore/Sources/SimpleComicCore/
+```
+
 ## Build Instructions
 
 For this to build you need to get the submodules. For that you need to run the following commands.
