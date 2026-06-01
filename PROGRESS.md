@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 12 완료 (Phase 6 — requestDataForPageIndex → Rust)
+> 현재 Phase: Sprint 13 완료 (Phase 6 — nestedArchiveContents 열거 → Rust ScPageList)
 
 ---
 
@@ -450,6 +450,25 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 **리뷰에서 발견된 이슈:**
 - **TODO**: solid RAR archives O(n) 재해제 문제 → Sprint 13에서 페이지 캐시 전략 수립
 - **TODO**: 매 페이지마다 archive open/close → 아카이브 핸들 캐시 필요 (Sprint 13)
+
+### Sprint 13 — Phase 6: nestedArchiveContents → Rust ScPageList (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (sc-ffi: 16 pass, +5 신규) |
+| clippy | 경고 0 |
+| 커밋 | 72e55c9 |
+
+**배선 완료 (3/6 Phase 6):**
+- `ScPageList` opaque 핸들 패턴: 아카이브 한 번 오픈 → 모든 페이지 메타데이터 캐시
+- `sc_archive_open_pages` / `sc_page_list_count/name/size` / `sc_archive_pages_free` 5개 C FFI
+- `nestedArchiveContents` Phase 1 (이미지 열거) → Rust 교체 완료
+- **핵심 버그 수정**: Sprint 12의 인덱스 불일치 문제 해결
+  - 기존: XADMaster raw counter(전체 엔트리) → Rust 인덱스(이미지만) 불일치
+  - 수정: Rust ScPageList iteration index `i` → Core Data index 저장
+
+**Phase 2 (nested archive/PDF) XADMaster 잔존 (edge case):**
+- Sprint 14 TODO: `sc_archive_read_entry_bytes(path, index)` 일반 엔트리 API 추가
 
 ---
 
