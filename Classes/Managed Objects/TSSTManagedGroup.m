@@ -232,7 +232,7 @@
 				nestedDescription.name = path.relativePath ?: path.path;
 				[nestedDescription nestedFolderContents];
 			}
-			else if([[TSSTManagedArchive archiveExtensions] containsObject: fileExtension])
+			else if(sc_archive_is_supported(path.path.UTF8String))
 			{
 				nestedDescription = [NSEntityDescription insertNewObjectForEntityForName: @"Archive" inManagedObjectContext: [self managedObjectContext]];
 				nestedDescription.fileURL = path;

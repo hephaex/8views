@@ -21,7 +21,6 @@ Copyright (c) 2006-2009 Dancing Tortoise Software
 #import "TSSTSessionWindowController.h"	// AppleScript
 #import "TSSTImageUtilities.h"
 #import "TSSTManagedGroup.h"
-#import <XADMaster/XADArchive.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "sc_extras.h"
 
