@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 11 완료 (Phase 6 시작 — AppDelegate 배선 1/6)
+> 현재 Phase: Sprint 12 완료 (Phase 6 — requestDataForPageIndex → Rust)
 
 ---
 
@@ -429,6 +429,27 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - `SimpleComicAppDelegate.m` 3곳: `[TSSTManagedArchive archiveExtensions]` → `sc_archive_is_supported()`
 
 **개선점:** 확장자 없는 아카이브도 magic bytes로 정확히 감지 (기존 ObjC 방식 대비)
+
+### Sprint 12 — Phase 6: requestDataForPageIndex → Rust archive_read_page (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (sc-ffi: 11 pass) |
+| clippy | 경고 0 |
+| 커밋 | bf88013 + ab108fc |
+
+**배선 완료 (2/6 AppDelegate-level):**
+- `sc_archive_read_page()` + `sc_free_bytes()` C FFI 추가 (no_mangle, heap ownership)
+- `SCArchiveError` enum + `SCArchiveErrorDomain` 매크로 → `sc_extras.h`
+- `TSSTManagedArchive.requestDataForPageIndex:` — XADMaster 교체 완료
+  - solidDirectory 디스크 캐시 제거 (Rust libarchive 직접 처리)
+  - `groupLock` 불필요 (per-call archive handle, 공유 상태 없음)
+- libsimplecomic.a universal 재빌드 (arm64+x86_64)
+- 4개 신규 Rust 단위 테스트 (success/out-of-range/null-path/free-null)
+
+**리뷰에서 발견된 이슈:**
+- **TODO**: solid RAR archives O(n) 재해제 문제 → Sprint 13에서 페이지 캐시 전략 수립
+- **TODO**: 매 페이지마다 archive open/close → 아카이브 핸들 캐시 필요 (Sprint 13)
 
 ---
 
