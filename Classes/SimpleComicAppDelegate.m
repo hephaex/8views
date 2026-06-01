@@ -580,6 +580,13 @@ static NSArray<NSNumber*> * allAvailableStringEncodings(void)
 {
 	TSSTSessionWindowController * controller = [notification object];
 	TSSTManagedSession * sessionToRemove = [controller session];
+
+	// Delete from Rust SessionManager in sync with Core Data.
+	NSString *archivePath = [controller rustSessionArchivePath];
+	if (archivePath) {
+		sc_session_delete_c(archivePath.UTF8String);
+	}
+
 	[sessions removeObject: controller];
 	[[self managedObjectContext] deleteObject: sessionToRemove];
 }

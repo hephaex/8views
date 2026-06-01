@@ -206,6 +206,9 @@ typedef NS_ENUM(NSInteger, PageSelectionMode)  {
 
 - (NSRect)optimalPageViewRectForRect:(NSRect)boundingRect;
 
+/// Return the archive file path for the current session, or nil for loose images.
+- (nullable NSString *)rustSessionArchivePath;
+
 @end
 
 NS_ASSUME_NONNULL_END

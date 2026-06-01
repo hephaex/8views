@@ -1098,6 +1098,16 @@ NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
     session.twoPageSpread = rustState.two_page_spread;
     session.pageOrder     = !rustState.right_to_left; // pageOrder YES = left-to-right
     session.scaleOptions  = (int16_t)rustState.scale_mode;
+
+    // Restore scroll position from Rust state (serialise back to NSData for Core Data).
+    if (rustState.scroll_x != 0.0 || rustState.scroll_y != 0.0) {
+        NSPoint scrollPt = NSMakePoint(rustState.scroll_x, rustState.scroll_y);
+        NSValue *scrollValue = [NSValue valueWithPoint:scrollPt];
+        NSData *scrollData = [NSKeyedArchiver archivedDataWithRootObject:scrollValue
+                                                   requiringSecureCoding:YES
+                                                                   error:NULL];
+        session.scrollPosition = scrollData;
+    }
 }
 
 /// Save current Core Data session state to Rust SessionManager.

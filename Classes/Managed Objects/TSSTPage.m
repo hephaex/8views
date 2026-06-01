@@ -23,6 +23,7 @@ Copyright (c) 2006-2009 Dancing Tortoise Software
 #import "TSSTManagedGroup.h"
 #import <XADMaster/XADArchive.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#import "sc_extras.h"
 
 static NSDictionary * TSSTInfoPageAttributes = nil;
 static NSSize monospaceCharacterSize;
@@ -187,24 +188,59 @@ static NSSize monospaceCharacterSize;
 - (NSData *)prepThumbnail
 {
 	[thumbLock lock];
-	NSImage * managedImage = [self pageImage];
-	NSData * thumbnailData = nil;
-	NSSize pixelSize = [managedImage size];
-	if(managedImage)
-	{
-		pixelSize = sizeConstrainedByDimension(pixelSize, 256);
-		NSImage * temp = [[NSImage alloc] initWithSize: pixelSize];
-		[temp lockFocus];
-		[[NSGraphicsContext currentContext] setImageInterpolation: NSImageInterpolationHigh];
-		[managedImage drawInRect: NSMakeRect(0, 0, pixelSize.width, pixelSize.height)
-						fromRect: NSZeroRect
-					   operation: NSCompositingOperationSourceOver
-						fraction: 1.0];
-		[temp unlockFocus];
-		thumbnailData = [temp TIFFRepresentation];
+
+	NSData *thumbnailData = nil;
+	NSData *rawPageData = [self pageData];
+
+	if (rawPageData) {
+		// Use Rust Lanczos3 thumbnail generation (faster, no AppKit overhead).
+		size_t outLen = 0;
+		uint32_t outW = 0, outH = 0;
+		int32_t errCode = 0;
+		uint8_t *rgba = sc_thumbnail_from_bytes(
+			(const uint8_t *)rawPageData.bytes, rawPageData.length,
+			256, &outLen, &outW, &outH, &errCode);
+
+		if (rgba && outW > 0 && outH > 0) {
+			// Build NSBitmapImageRep from raw RGBA bytes.
+			NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
+				initWithBitmapDataPlanes: NULL
+							  pixelsWide: outW
+							  pixelsHigh: outH
+						   bitsPerSample: 8
+						 samplesPerPixel: 4
+								hasAlpha: YES
+								isPlanar: NO
+						  colorSpaceName: NSDeviceRGBColorSpace
+							bitmapFormat: NSBitmapFormatAlphaFirst
+							 bytesPerRow: outW * 4
+							bitsPerPixel: 32];
+			if (rep) {
+				memcpy([rep bitmapData], rgba, outLen);
+				thumbnailData = [rep TIFFRepresentation];
+			}
+			sc_free_bytes(rgba, outLen);
+		}
 	}
+
+	// Fallback: AppKit scaling if Rust fails (e.g. animated GIF).
+	if (!thumbnailData) {
+		NSImage *managedImage = [self pageImage];
+		if (managedImage) {
+			NSSize pixelSize = sizeConstrainedByDimension([managedImage size], 256);
+			NSImage *temp = [[NSImage alloc] initWithSize: pixelSize];
+			[temp lockFocus];
+			[[NSGraphicsContext currentContext] setImageInterpolation: NSImageInterpolationHigh];
+			[managedImage drawInRect: NSMakeRect(0, 0, pixelSize.width, pixelSize.height)
+							fromRect: NSZeroRect
+						   operation: NSCompositingOperationSourceOver
+							fraction: 1.0];
+			[temp unlockFocus];
+			thumbnailData = [temp TIFFRepresentation];
+		}
+	}
+
 	[thumbLock unlock];
-	
 	return thumbnailData;
 }
 

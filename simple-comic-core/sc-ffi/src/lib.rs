@@ -471,6 +471,58 @@ pub unsafe extern "C" fn sc_session_delete_c(archive_path: *const std::ffi::c_ch
     }
 }
 
+// ── Thumbnail C FFI ──────────────────────────────────────────────────────────
+
+/// C-callable: generate a thumbnail from raw image bytes.
+///
+/// `image_bytes[0..image_len]` — compressed image data (JPEG, PNG, WebP, …).
+/// `thumb_size`                 — max dimension (width and height) of the output.
+///
+/// On success: writes RGBA dimensions to `*out_width` / `*out_height`, writes
+/// byte count to `*out_len`, sets `*error_code_out` to 0, and returns a
+/// heap-allocated RGBA buffer (4 bytes per pixel, row-major).
+/// Caller must release with `sc_free_bytes(ptr, *out_len)`.
+/// On failure: returns NULL and sets `*error_code_out` to 1.
+///
+/// # Safety
+/// `image_bytes` must point to `image_len` valid bytes.
+/// `out_len`, `out_width`, `out_height` must be valid non-null pointers.
+/// `error_code_out` may be null.
+#[no_mangle]
+pub unsafe extern "C" fn sc_thumbnail_from_bytes(
+    image_bytes: *const u8,
+    image_len: usize,
+    thumb_size: u32,
+    out_len: *mut usize,
+    out_width: *mut u32,
+    out_height: *mut u32,
+    error_code_out: *mut i32,
+) -> *mut u8 {
+    let set_err = |code: i32| {
+        if !error_code_out.is_null() {
+            *error_code_out = code;
+        }
+    };
+    if image_bytes.is_null() || out_len.is_null() || out_width.is_null() || out_height.is_null() {
+        set_err(1);
+        return std::ptr::null_mut();
+    }
+    let bytes = std::slice::from_raw_parts(image_bytes, image_len);
+    let img = match image::load_from_memory(bytes) {
+        Ok(i) => i,
+        Err(_) => { set_err(1); return std::ptr::null_mut(); }
+    };
+    let spec = sc_image::ThumbnailSpec { width: thumb_size, height: thumb_size };
+    let thumb = sc_image::thumbnail::generate_thumbnail(&img, spec).to_rgba8();
+    *out_width = thumb.width();
+    *out_height = thumb.height();
+    let rgba: Vec<u8> = thumb.into_raw();
+    let boxed: Box<[u8]> = rgba.into_boxed_slice();
+    *out_len = boxed.len();
+    set_err(0);
+    Box::into_raw(boxed) as *mut u8
+}
+
 // ── Thumbnail functions ───────────────────────────────────────────────────────
 
 /// Generate a thumbnail for raw image bytes. Returns raw RGBA bytes.

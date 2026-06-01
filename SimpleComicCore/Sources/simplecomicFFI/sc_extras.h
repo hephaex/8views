@@ -118,6 +118,30 @@ bool sc_session_save(
 /// Delete persisted session state for archive_path. No-op if not found. NULL is safe.
 void sc_session_delete_c(const char * _Nullable archive_path);
 
+// ── Thumbnail ─────────────────────────────────────────────────────────────────
+
+/// Generate a thumbnail from compressed image bytes (JPEG, PNG, WebP, …).
+///
+/// thumb_size = max dimension; output is at most thumb_size × thumb_size pixels.
+///
+/// On success: returns heap-allocated RGBA buffer (4 bytes/pixel, row-major);
+/// writes pixel dimensions to *out_width/*out_height, byte count to *out_len,
+/// sets *error_code_out to 0.  Caller must release with sc_free_bytes(ptr, *out_len).
+/// On failure: returns NULL; sets *error_code_out to 1.
+///
+/// image_bytes must point to image_len valid bytes.
+/// out_len, out_width, out_height must be valid non-null pointers.
+/// error_code_out may be NULL.
+uint8_t * _Nullable sc_thumbnail_from_bytes(
+    const uint8_t * _Nonnull image_bytes,
+    size_t image_len,
+    uint32_t thumb_size,
+    size_t * _Nonnull out_len,
+    uint32_t * _Nonnull out_width,
+    uint32_t * _Nonnull out_height,
+    int32_t * _Nullable error_code_out
+);
+
 #ifdef __cplusplus
 }
 #endif
