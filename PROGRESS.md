@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 15 완료 (Phase 6 — 썸네일 Rust + 세션 완성)
+> 현재 Phase: **Phase 6 완료** (Sprint 16 — TSSTPage.pageImage Rust 사전 스케일링)
 
 ---
 
@@ -13,7 +13,7 @@ Phase 2: 아카이브 엔진  [x] 4/4 sprint (완료)
 Phase 3: 이미지 파이프라인 [x] 4/4 sprint (완료)
 Phase 4: 세션 스토리지     [~] 1/3 sprint (Sprint 10 — pages API)
 Phase 5: Swift FFI     [x] 3/3 sprint (Sprint 6+7+8 — 완료)
-Phase 6: UI 배선        [ ] 0/6 sprint
+Phase 6: UI 배선        [x] 6/6 완료 (Sprint 11-16)
 Phase 7: OCR 통합       [ ] 0/2 sprint
 Phase 8: QuickLook     [ ] 0/2 sprint
 Phase 9: 최종 검증      [ ] 0/2 sprint
@@ -506,6 +506,33 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 
 **Phase 6 잔여:**
 - `TSSTPageView.m` — 이미지 렌더링 → Rust 파이프라인 (스케일+컴포지팅)
+
+### Sprint 16 — Phase 6 완료: TSSTPage.pageImage Rust 사전 스케일링 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (sc-ffi: 22 pass, +2 신규) |
+| clippy | 경고 0 |
+| 커밋 | 4d45c88 |
+
+**Phase 6 UI 배선 6/6 완료:**
+- `sc_cap_image_bytes` C FFI: max(w,h) > 2048px → Rust Lanczos3 사전 스케일링
+- `TSSTPage.pageImage`: 대형 이미지 메모리 최적화 (2048px 캡)
+  - CALayer GPU 렌더링 유지 (품질 무손실)
+  - AppKit 폴백: animated GIF / Rust 디코드 실패 시
+- `kSCMaxInMemoryDimension = 2048` 상수
+
+**Phase 6 완료 요약 (Sprint 11-16):**
+| Sprint | 배선 대상 |
+|--------|---------|
+| 11 | AppDelegate 아카이브 감지 → Rust |
+| 12 | requestDataForPageIndex → Rust |
+| 13 | nestedArchiveContents 열거 → Rust ScPageList |
+| 14 | TSSTSessionWindowController 세션 CRUD → Rust |
+| 15 | 스크롤 복원 + 세션 삭제 + 썸네일 Rust |
+| 16 | pageImage 대형 이미지 메모리 최적화 |
+
+**다음: Phase 7 OCR 통합 또는 Phase 9 최종 검증**
 
 ---
 
