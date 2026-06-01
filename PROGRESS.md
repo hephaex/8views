@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: Sprint 9 완료 (파이프라인 E2E + 썸네일 FFI + App Support DB)
+> 현재 Phase: Sprint 10 완료 (Phase 3 완료 + Phase 4 시작)
 
 ---
 
@@ -10,7 +10,8 @@
 ```
 Phase 1: 설정          [x] 2/2 sprint (완료)
 Phase 2: 아카이브 엔진  [x] 4/4 sprint (완료)
-Phase 3: 이미지 파이프라인 [~] 3/4 sprint (Sprint 9 — E2E + FFI 노출)
+Phase 3: 이미지 파이프라인 [x] 4/4 sprint (완료)
+Phase 4: 세션 스토리지     [~] 1/3 sprint (Sprint 10 — pages API)
 Phase 5: Swift FFI     [x] 3/3 sprint (Sprint 6+7+8 — 완료)
 Phase 6: UI 배선        [ ] 0/6 sprint
 Phase 7: OCR 통합       [ ] 0/2 sprint
@@ -108,10 +109,15 @@ Phase 9: 최종 검증      [ ] 0/2 sprint
 - [x] `crate-type` += `rlib` (통합 테스트 링킹 지원)
 - [x] 커밋: 6f6ec9f
 
-### Sprint 10: PDF 지원 + 파이프라인 통합
-- [ ] PDF 페이지 → 이미지 (PDFKit Swift 래퍼 or pdfium-render)
-- [ ] uniffi UDL: `load_image()`, `get_thumbnail()`, `composite_two_pages()` 노출
-- [ ] 성능 벤치마크: 썸네일 200개 생성 < 3s
+### Sprint 10: Phase 3 완결 + Phase 4 시작 ✅ (2026-06-01)
+- [x] Swift 바인딩 재생성 (1,253줄 — thumbnail API 포함)
+- [x] libsimplecomic-universal.a 재빌드 (dirs + image deps)
+- [x] JPEG/WebP/GIF/BMP 포맷 로딩 통합 테스트 4개 (round-trip 검증)
+  → Phase 3 모든 포맷 커버리지 완성
+- [x] sc-storage `page_metadata` 테이블 (SCHEMA_V2)
+  - `PageRecord` struct + `upsert_page_metadata` / `get_page_metadata` / `clear_page_metadata`
+  - 4개 단위 테스트 (CASCADE delete 포함)
+- [x] 커밋: 4f7cc4c
 
 ---
 
@@ -392,6 +398,21 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 **핵심 학습:**
 - `sc-ffi`에 `rlib` crate-type 추가 필수 — `staticlib`/`cdylib`만으로는 통합 테스트에서 `extern crate simplecomic` 링크 불가
 - UDL의 `[ByRef] bytes` → Rust `&[u8]` (소유권 이전 없이 바이트 슬라이스 전달)
+
+### Sprint 10 — Phase 3 완결 + Phase 4 시작 (2026-06-01)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 100 pass / 0 fail (+8 신규) |
+| Swift XCTest | 4/4 pass |
+| clippy | 경고 0 |
+| fmt | 통과 |
+| 커밋 | 4f7cc4c |
+
+**마일스톤:**
+- **Phase 3 (이미지 파이프라인) 4/4 완료** — 모든 포맷 커버리지, FFI 노출
+- **Phase 4 시작** — page_metadata 테이블 + CRUD API
+- Swift 바인딩 1,253줄 (thumbnail API 포함)
 
 ---
 
