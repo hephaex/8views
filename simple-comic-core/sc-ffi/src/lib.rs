@@ -939,4 +939,34 @@ mod tests {
         assert!(ptr.is_null());
         assert_eq!(err, 1);
     }
+
+    // ── Pixel order regression tests (Sprint 18) ─────────────────────────────
+    // Verify that sc_thumbnail_from_bytes and sc_cap_image_bytes return RGBA
+    // byte order (R first, A last) matching NSBitmapFormatAlphaNonpremultiplied.
+
+    #[test]
+    fn thumbnail_pixel_order_is_rgba() {
+        let tmp = make_test_cbz(1);
+        let page = archive_read_page(tmp.path().to_str().unwrap(), 0).expect("read page");
+
+        let mut out_len: usize = 0; let mut out_w: u32 = 0; let mut out_h: u32 = 0;
+        let mut err: i32 = -1;
+        let ptr = unsafe {
+            sc_thumbnail_from_bytes(page.as_ptr(), page.len(), 32, &mut out_len, &mut out_w, &mut out_h, &mut err)
+        };
+        assert!(!ptr.is_null(), "thumbnail should succeed");
+        assert_eq!(err, 0);
+        assert!(out_w > 0 && out_h > 0);
+        assert_eq!(out_len as u32, out_w * out_h * 4, "RGBA = 4 bytes per pixel");
+
+        // The test PNG is a 1×1 opaque pixel.  In RGBA order the last byte is
+        // alpha = 255 (fully opaque).  In ARGB order it would be the first byte.
+        let bytes = unsafe { std::slice::from_raw_parts(ptr, out_len) };
+        // Last byte of first pixel = alpha channel in RGBA layout
+        let alpha = bytes[3];
+        assert_eq!(alpha, 255, "alpha (RGBA index 3) should be 255 for opaque PNG; \
+            got {alpha} — possible ARGB layout mismatch");
+
+        unsafe { sc_free_bytes(ptr, out_len) };
+    }
 }

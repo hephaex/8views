@@ -201,7 +201,9 @@ static NSSize monospaceCharacterSize;
 			256, &outLen, &outW, &outH, &errCode);
 
 		if (rgba && outW > 0 && outH > 0) {
-			// Build NSBitmapImageRep from raw RGBA bytes.
+			// Rust to_rgba8().into_raw() → R,G,B,A order (alpha LAST, non-premultiplied).
+			// NSBitmapFormatAlphaNonpremultiplied = alpha last + non-premultiplied.
+			// NSBitmapFormatAlphaFirst would be ARGB (alpha FIRST) — wrong for Rust RGBA.
 			NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
 				initWithBitmapDataPlanes: NULL
 							  pixelsWide: outW
@@ -211,7 +213,7 @@ static NSSize monospaceCharacterSize;
 								hasAlpha: YES
 								isPlanar: NO
 						  colorSpaceName: NSDeviceRGBColorSpace
-							bitmapFormat: NSBitmapFormatAlphaFirst
+							bitmapFormat: NSBitmapFormatAlphaNonpremultiplied
 							 bytesPerRow: outW * 4
 							bitsPerPixel: 32];
 			if (rep) {
@@ -270,6 +272,7 @@ static const uint32_t kSCMaxInMemoryDimension = 2048;
 
 	if (rgba) {
 		// Large image — use Rust-scaled RGBA as the source.
+		// Rust RGBA → NSBitmapFormatAlphaNonpremultiplied (alpha last, non-premultiplied).
 		NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
 			initWithBitmapDataPlanes: NULL
 						  pixelsWide: outW
@@ -279,7 +282,7 @@ static const uint32_t kSCMaxInMemoryDimension = 2048;
 							hasAlpha: YES
 							isPlanar: NO
 					  colorSpaceName: NSDeviceRGBColorSpace
-						bitmapFormat: NSBitmapFormatAlphaFirst
+						bitmapFormat: NSBitmapFormatAlphaNonpremultiplied
 						 bytesPerRow: outW * 4
 						bitsPerPixel: 32];
 		if (rep) {
