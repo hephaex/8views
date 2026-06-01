@@ -109,6 +109,66 @@ pub unsafe extern "C" fn sc_archive_is_supported(path: *const std::ffi::c_char) 
     sc_archive::is_archive_supported(std::path::Path::new(s))
 }
 
+/// C-callable: read raw image bytes for page `index` from the archive at `archive_path`.
+///
+/// On success: returns a heap-allocated buffer; writes byte count to `*out_len`; sets
+/// `*error_code_out` to 0.  The caller must release the buffer with `sc_free_bytes()`.
+/// On failure: returns NULL; sets `*error_code_out` to a non-zero code:
+///   1 = I/O / archive open error
+///   2 = entry not found (index out of range)
+///   3 = unsupported format
+///
+/// # Safety
+/// `archive_path` must be a valid NUL-terminated UTF-8 C string.
+/// `out_len` must be a valid non-null pointer.
+/// `error_code_out` may be null (error code is discarded).
+#[no_mangle]
+pub unsafe extern "C" fn sc_archive_read_page(
+    archive_path: *const std::ffi::c_char,
+    index: u32,
+    out_len: *mut usize,
+    error_code_out: *mut i32,
+) -> *mut u8 {
+    let set_err = |code: i32| {
+        if !error_code_out.is_null() {
+            unsafe { *error_code_out = code; }
+        }
+    };
+
+    if archive_path.is_null() || out_len.is_null() {
+        set_err(1);
+        return std::ptr::null_mut();
+    }
+    let path_str = match unsafe { std::ffi::CStr::from_ptr(archive_path) }.to_str() {
+        Ok(s) => s,
+        Err(_) => { set_err(1); return std::ptr::null_mut(); }
+    };
+
+    match archive_read_page(path_str, index) {
+        Ok(bytes) => {
+            let boxed: Box<[u8]> = bytes.into_boxed_slice();
+            unsafe { *out_len = boxed.len(); }
+            set_err(0);
+            Box::into_raw(boxed) as *mut u8
+        }
+        Err(ScError::EntryNotFound) => { set_err(2); std::ptr::null_mut() }
+        Err(ScError::UnsupportedFormat) => { set_err(3); std::ptr::null_mut() }
+        Err(_) => { set_err(1); std::ptr::null_mut() }
+    }
+}
+
+/// C-callable: free a buffer returned by `sc_archive_read_page`.
+///
+/// # Safety
+/// `ptr` must have been returned by `sc_archive_read_page` with the same `len`.
+/// Passing NULL is safe (no-op).
+#[no_mangle]
+pub unsafe extern "C" fn sc_free_bytes(ptr: *mut u8, len: usize) {
+    if !ptr.is_null() {
+        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(ptr, len)) };
+    }
+}
+
 pub fn archive_list_pages(archive_path: &str) -> Result<Vec<ArchiveEntryRecord>, ScError> {
     let archive =
         sc_archive::open_archive(std::path::Path::new(archive_path)).map_err(ScError::from)?;
@@ -338,5 +398,77 @@ mod tests {
     fn session_delete_noop_on_missing() {
         // Must not panic; returns ()
         session_delete("/nonexistent_sc_test.cbz");
+    }
+
+    // ── sc_archive_read_page C FFI tests ─────────────────────────────────────
+
+    fn make_test_cbz(page_count: usize) -> tempfile::NamedTempFile {
+        use std::io::Write as _;
+        const MINIMAL_PNG: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+            0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
+            0x54, 0x78, 0x9C, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
+            0x00, 0x03, 0x01, 0x01, 0x00, 0xC9, 0xFE, 0x92,
+            0xEF, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+            0x44, 0xAE, 0x42, 0x60, 0x82,
+        ];
+        let tmp = tempfile::Builder::new()
+            .suffix(".cbz")
+            .tempfile()
+            .expect("tempfile");
+        let file = tmp.reopen().expect("reopen");
+        let mut zip = zip::ZipWriter::new(file);
+        let opts = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        for i in 1..=page_count {
+            zip.start_file(format!("page{i:03}.png"), opts).expect("start_file");
+            zip.write_all(MINIMAL_PNG).expect("write_all");
+        }
+        zip.finish().expect("finish");
+        tmp
+    }
+
+    #[test]
+    fn c_ffi_read_page_success() {
+        let tmp = make_test_cbz(3);
+        let path = std::ffi::CString::new(tmp.path().to_str().unwrap()).unwrap();
+        let mut out_len: usize = 0;
+        let mut err_code: i32 = -1;
+        let ptr = unsafe { sc_archive_read_page(path.as_ptr(), 0, &mut out_len, &mut err_code) };
+        assert!(!ptr.is_null(), "expected non-null buffer");
+        assert!(out_len > 0, "expected non-zero length");
+        assert_eq!(err_code, 0);
+        unsafe { sc_free_bytes(ptr, out_len) };
+    }
+
+    #[test]
+    fn c_ffi_read_page_out_of_range() {
+        let tmp = make_test_cbz(3);
+        let path = std::ffi::CString::new(tmp.path().to_str().unwrap()).unwrap();
+        let mut out_len: usize = 0;
+        let mut err_code: i32 = 0;
+        let ptr = unsafe { sc_archive_read_page(path.as_ptr(), 999, &mut out_len, &mut err_code) };
+        assert!(ptr.is_null());
+        assert_eq!(err_code, 2);
+    }
+
+    #[test]
+    fn c_ffi_read_page_null_path() {
+        let mut out_len: usize = 0;
+        let mut err_code: i32 = 0;
+        let ptr = unsafe {
+            sc_archive_read_page(std::ptr::null(), 0, &mut out_len, &mut err_code)
+        };
+        assert!(ptr.is_null());
+        assert_eq!(err_code, 1);
+    }
+
+    #[test]
+    fn c_ffi_free_bytes_null_safe() {
+        // Must not panic or crash
+        unsafe { sc_free_bytes(std::ptr::null_mut(), 0) };
     }
 }

@@ -10,6 +10,7 @@
 #import "TSSTManagedGroup+CoreDataProperties.h"
 #import "SimpleComicAppDelegate.h"
 #import <XADMaster/XADArchive.h>
+#import "sc_extras.h"
 #import <Quartz/Quartz.h>
 #import "TSSTImageUtilities.h"
 #import "TSSTPage.h"
@@ -376,38 +377,22 @@
 
 - (void)requestDataForPageIndex:(NSInteger)index completionHandler:(void(^)(NSData *_Nullable pageData, NSError *_Nullable error))callback
 {
-	NSString * solidDirectory = self.solidDirectory;
-	NSData * imageData;
-	if(!solidDirectory)
-	{
-		[groupLock lock];
-		NSError *err;
-		imageData = [[self instance] contentsOfEntry: index error: &err];
-		[groupLock unlock];
-		callback(imageData, err);
+	NSString *archivePath = self.fileURL.path;
+	if (!archivePath) {
+		callback(nil, [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileNoSuchFileError userInfo:nil]);
+		return;
 	}
-	else
-	{
-		NSString * name = [[self instance] nameOfEntry: index];
-		NSString * fileName = [NSString stringWithFormat:@"%li.%@", (long)index, [name pathExtension]];
-		fileName = [solidDirectory stringByAppendingPathComponent: fileName];
-		if(![[NSFileManager defaultManager] fileExistsAtPath: fileName])
-		{
-			[groupLock lock];
-			NSError *err;
-			imageData = [[self instance] contentsOfEntry: index error: &err];
-			[groupLock unlock];
-			[imageData writeToFile: fileName options: 0 error: nil];
-			callback(imageData, err);
-		}
-		else
-		{
-			NSError *err = nil;
-			imageData = [NSData dataWithContentsOfFile: fileName options:0 error:&err];
-			callback(imageData, err);
-			return;
-		}
+	size_t outLen = 0;
+	int32_t errCode = 0;
+	uint8_t *buf = sc_archive_read_page(archivePath.UTF8String, (uint32_t)index, &outLen, &errCode);
+	if (!buf) {
+		NSError *err = [NSError errorWithDomain:@"SCArchiveErrorDomain" code:errCode userInfo:nil];
+		callback(nil, err);
+		return;
 	}
+	NSData *imageData = [NSData dataWithBytes:buf length:outLen];
+	sc_free_bytes(buf, outLen);
+	callback(imageData, nil);
 }
 
 
