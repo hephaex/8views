@@ -534,6 +534,40 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 
 **다음: Phase 7 OCR 통합 또는 Phase 9 최종 검증**
 
+### Sprint 17 — Phase 9 시작: 정리 + 벤치마크 검증 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass |
+| clippy | 경고 0 |
+| 커밋 | 7aa984e + 61613b4 |
+
+**완료:**
+- `nestedFolderContents` archiveExtensions → `sc_archive_is_supported` (마지막 archive detection 교체)
+- `TSSTPage.m` XADMaster import 제거
+- CHANGELOG.md 작성 (Phase 6 전체)
+- 생성된 Swift 바인딩 파일 git 추가
+- 벤치마크 `.cbz` suffix 버그 수정
+
+**Phase 9 벤치마크 기준값 (2026-06-02):**
+
+| 측정 항목 | 시간 |
+|---------|------|
+| natural_sort 100개 파일명 | 424 µs |
+| is_image_entry 1000x | 50 µs |
+| cbz_open_and_list_50pages | 458 µs |
+| cbz_read_first_image_50pages | 682 µs |
+| image scale fit_window 800×1200→1024×768 | 19.7 ms |
+| two_page_spread compositor | 6.4 ms |
+| thumbnail_parallel 10 entries | 1.1 ms |
+| thumbnail_parallel 50 entries | 4.1 ms |
+| thumbnail_serial 50 entries | 20.5 ms (×5 serial vs parallel) |
+
+**잔여 XADMaster 의존성:**
+- `nestedArchiveContents` Phase 2: 중첩 아카이브 + PDF 추출 (edge case)
+- `TSSTManagedArchive.instance`: XADArchive 핸들 (Phase 2 전용)
+- `SimpleComicAppDelegate.archiveTypes`: NSOpenPanel 파일 타입 필터 (UI only)
+
 ---
 
 *최종 업데이트: 2026-06-02*
