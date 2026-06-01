@@ -244,35 +244,74 @@ static NSSize monospaceCharacterSize;
 	return thumbnailData;
 }
 
+/// Maximum pixel dimension for in-memory storage. Images larger than this are
+/// pre-scaled with Rust Lanczos3 to reduce memory pressure before passing to
+/// CoreAnimation. CALayer handles the final GPU display scaling.
+static const uint32_t kSCMaxInMemoryDimension = 2048;
+
 - (NSImage *)pageImage
 {
 	if(self.text)
 	{
 		return [self textPage];
 	}
-	
-	NSImage * imageFromData = nil;
-	NSData * imageData = [self pageData];
-	
-	if(imageData)
-	{
-		[self setOwnSizeInfoWithData: imageData];
+
+	NSData *imageData = [self pageData];
+	if (!imageData) return nil;
+
+	[self setOwnSizeInfoWithData: imageData];
+
+	// Attempt Rust pre-scale for large images (>2048px) to reduce memory pressure.
+	size_t outLen = 0; uint32_t outW = 0, outH = 0; int32_t errCode = 0;
+	uint8_t *rgba = sc_cap_image_bytes(
+		(const uint8_t *)imageData.bytes, imageData.length,
+		kSCMaxInMemoryDimension, &outLen, &outW, &outH, &errCode);
+
+	NSImage *imageFromData = nil;
+
+	if (rgba) {
+		// Large image — use Rust-scaled RGBA as the source.
+		NSBitmapImageRep *rep = [[NSBitmapImageRep alloc]
+			initWithBitmapDataPlanes: NULL
+						  pixelsWide: outW
+						  pixelsHigh: outH
+					   bitsPerSample: 8
+					 samplesPerPixel: 4
+							hasAlpha: YES
+							isPlanar: NO
+					  colorSpaceName: NSDeviceRGBColorSpace
+						bitmapFormat: NSBitmapFormatAlphaFirst
+						 bytesPerRow: outW * 4
+						bitsPerPixel: 32];
+		if (rep) {
+			memcpy([rep bitmapData], rgba, outLen);
+			imageFromData = [[NSImage alloc] initWithSize:NSMakeSize(outW, outH)];
+			[imageFromData addRepresentation:rep];
+		}
+		sc_free_bytes(rgba, outLen);
+	}
+
+	// Fallback: AppKit native decoding (animated GIF, small images, Rust decode failure).
+	if (!imageFromData) {
 		imageFromData = [[NSImage alloc] initWithData: imageData];
 	}
-	
-	NSSize imageSize =  NSMakeSize(self.width, self.height);
-	
-	if(!imageFromData || NSEqualSizes(NSZeroSize, imageSize))
-	{
-		imageFromData = nil;
+
+	NSSize imageSize = NSMakeSize(self.width, self.height);
+	if (!imageFromData || NSEqualSizes(NSZeroSize, imageSize)) {
+		return nil;
 	}
-	else
-	{
-		[imageFromData setCacheMode: NSImageCacheNever];
-		[imageFromData setSize: imageSize];
-		[imageFromData setCacheMode: NSImageCacheBySize];
+
+	// Apply physical pixel size so AppKit knows the true dimensions.
+	if (rgba) {
+		// Already scaled — update stored size to match capped dimensions.
+		self.width  = outW;
+		self.height = outH;
+		imageSize = NSMakeSize(outW, outH);
 	}
-	
+	[imageFromData setCacheMode: NSImageCacheNever];
+	[imageFromData setSize: imageSize];
+	[imageFromData setCacheMode: NSImageCacheBySize];
+
 	return imageFromData;
 }
 

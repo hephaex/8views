@@ -120,6 +120,30 @@ void sc_session_delete_c(const char * _Nullable archive_path);
 
 // ── Thumbnail ─────────────────────────────────────────────────────────────────
 
+/// Cap image bytes to a maximum dimension using Rust Lanczos3 scaling.
+///
+/// If max(width, height) > max_dim, scales down to max_dim (aspect-preserved).
+/// If already within bounds, returns NULL and sets *error_code_out to 0 — no
+/// scaling needed, caller should use the original bytes.
+///
+/// On scale: returns heap-allocated RGBA buffer; writes dimensions to
+/// *out_width / *out_height, byte count to *out_len.
+/// Caller releases with sc_free_bytes(ptr, *out_len).
+/// On failure: returns NULL, *error_code_out = 1.
+///
+/// image_bytes must point to image_len valid bytes.
+/// out_len, out_width, out_height must be valid non-null pointers.
+/// error_code_out may be NULL.
+uint8_t * _Nullable sc_cap_image_bytes(
+    const uint8_t * _Nonnull image_bytes,
+    size_t image_len,
+    uint32_t max_dim,
+    size_t * _Nonnull out_len,
+    uint32_t * _Nonnull out_width,
+    uint32_t * _Nonnull out_height,
+    int32_t * _Nullable error_code_out
+);
+
 /// Generate a thumbnail from compressed image bytes (JPEG, PNG, WebP, …).
 ///
 /// thumb_size = max dimension; output is at most thumb_size × thumb_size pixels.

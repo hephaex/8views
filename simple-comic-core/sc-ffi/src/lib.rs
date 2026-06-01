@@ -523,6 +523,63 @@ pub unsafe extern "C" fn sc_thumbnail_from_bytes(
     Box::into_raw(boxed) as *mut u8
 }
 
+/// C-callable: cap image bytes to a maximum dimension using Rust Lanczos3 scaling.
+///
+/// If max(original_width, original_height) > `max_dim`, scales the image down
+/// so the longest side equals `max_dim` (aspect-ratio preserved).
+/// If the image already fits within `max_dim`, returns NULL and sets
+/// `*error_code_out` to 0 — the caller should use the original bytes unchanged.
+///
+/// On scale: returns heap-allocated RGBA buffer; writes dimensions to
+/// `*out_width`/`*out_height` and byte count to `*out_len`.
+/// Caller releases with `sc_free_bytes(ptr, *out_len)`.
+/// On failure: returns NULL and sets `*error_code_out` to 1.
+/// No-scaling case: returns NULL and sets `*error_code_out` to 0.
+///
+/// # Safety
+/// `image_bytes` must point to `image_len` valid bytes.
+/// `out_len`, `out_width`, `out_height` must be valid non-null pointers.
+/// `error_code_out` may be null.
+#[no_mangle]
+pub unsafe extern "C" fn sc_cap_image_bytes(
+    image_bytes: *const u8,
+    image_len: usize,
+    max_dim: u32,
+    out_len: *mut usize,
+    out_width: *mut u32,
+    out_height: *mut u32,
+    error_code_out: *mut i32,
+) -> *mut u8 {
+    let set_err = |code: i32| {
+        if !error_code_out.is_null() {
+            *error_code_out = code;
+        }
+    };
+    if image_bytes.is_null() || out_len.is_null() || out_width.is_null() || out_height.is_null() {
+        set_err(1);
+        return std::ptr::null_mut();
+    }
+    let bytes = std::slice::from_raw_parts(image_bytes, image_len);
+    let img = match image::load_from_memory(bytes) {
+        Ok(i) => i,
+        Err(_) => { set_err(1); return std::ptr::null_mut(); }
+    };
+    let max_side = img.width().max(img.height());
+    if max_side <= max_dim {
+        // Already within bounds — no scaling needed.
+        set_err(0);
+        return std::ptr::null_mut();
+    }
+    let spec = sc_image::ThumbnailSpec { width: max_dim, height: max_dim };
+    let scaled = sc_image::thumbnail::generate_thumbnail(&img, spec).to_rgba8();
+    *out_width = scaled.width();
+    *out_height = scaled.height();
+    let boxed: Box<[u8]> = scaled.into_raw().into_boxed_slice();
+    *out_len = boxed.len();
+    set_err(0);
+    Box::into_raw(boxed) as *mut u8
+}
+
 // ── Thumbnail functions ───────────────────────────────────────────────────────
 
 /// Generate a thumbnail for raw image bytes. Returns raw RGBA bytes.
@@ -848,5 +905,38 @@ mod tests {
     #[test]
     fn c_session_delete_null_safe() {
         unsafe { sc_session_delete_c(std::ptr::null()) };
+    }
+
+    // ── sc_cap_image_bytes tests ──────────────────────────────────────────────
+
+    #[test]
+    fn cap_image_no_scale_when_small() {
+        // 1×1 PNG is 1 pixel — well below any max_dim; should return NULL, errCode=0
+        let tmp = make_test_cbz(1);
+        let path = std::ffi::CString::new(tmp.path().to_str().unwrap()).unwrap();
+        let mut out_len: usize = 0; let mut err: i32 = -1;
+        // Read first page raw bytes
+        let page_bytes = archive_read_page(tmp.path().to_str().unwrap(), 0)
+            .expect("read page");
+        let mut out_w: u32 = 0; let mut out_h: u32 = 0;
+        let ptr = unsafe {
+            sc_cap_image_bytes(page_bytes.as_ptr(), page_bytes.len(), 2048,
+                               &mut out_len, &mut out_w, &mut out_h, &mut err)
+        };
+        // 1×1 image < 2048 → should return NULL (no scaling needed)
+        assert!(ptr.is_null(), "small image should not be scaled");
+        assert_eq!(err, 0, "error code should be 0 (not an error, just no-op)");
+        let _ = path; // keep tmp alive
+    }
+
+    #[test]
+    fn cap_image_null_path_returns_null() {
+        let mut out_len: usize = 0; let mut out_w: u32 = 0; let mut out_h: u32 = 0;
+        let mut err: i32 = 0;
+        let ptr = unsafe {
+            sc_cap_image_bytes(std::ptr::null(), 0, 2048, &mut out_len, &mut out_w, &mut out_h, &mut err)
+        };
+        assert!(ptr.is_null());
+        assert_eq!(err, 1);
     }
 }
