@@ -1,0 +1,22 @@
+[package]
+name = "sc-storage"
+description = "8views session persistence via SQLite"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sc-core = { path = "../sc-core" }
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+rusqlite.workspace = true
+rusqlite_migration.workspace = true
+xattr.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true

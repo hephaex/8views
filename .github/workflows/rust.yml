@@ -1,0 +1,71 @@
+name: Rust Core CI
+
+on:
+  push:
+    paths:
+      - '8views-core/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - '8views-core/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-14]  # Apple Silicon runner
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            8views-core/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('8views-core/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: cargo fmt check
+        working-directory: 8views-core
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        working-directory: 8views-core
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo test
+        working-directory: 8views-core
+        run: cargo test --workspace
+
+      - name: Build static lib (arm64)
+        working-directory: 8views-core
+        run: cargo build --release --package sc-ffi --target aarch64-apple-darwin
+
+      - name: Build static lib (x86_64)
+        working-directory: 8views-core
+        run: cargo build --release --package sc-ffi --target x86_64-apple-darwin
+
+      - name: Create universal static lib
+        working-directory: 8views-core
+        run: |
+          lipo -create \
+            target/aarch64-apple-darwin/release/libeightviews.a \
+            target/x86_64-apple-darwin/release/libeightviews.a \
+            -output target/libeightviews-universal.a
+          echo "Universal lib size: $(du -h target/libeightviews-universal.a | cut -f1)"

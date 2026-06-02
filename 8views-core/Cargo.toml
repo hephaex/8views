@@ -1,0 +1,72 @@
+[workspace]
+members = [
+    "sc-core",
+    "sc-archive",
+    "sc-image",
+    "sc-storage",
+    "sc-ffi",
+    "tools/uniffi-bindgen",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.2.0-alpha"
+edition = "2021"
+authors = ["Mario Cho <hephaex@gmail.com>"]
+license = "MIT"
+rust-version = "1.80"
+
+[workspace.dependencies]
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Directories
+dirs = "5"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Archive
+zip = "2"
+tar = "0.4"
+flate2 = "1"
+bzip2 = "0.5"
+xz2 = "0.1"
+sevenz-rust = "0.6"
+unrar = { package = "unrar-ng", version = "0.7" }
+
+# Image
+image = { version = "0.25", features = ["jpeg", "png", "gif", "bmp", "tiff", "webp"] }
+rayon = "1"
+lru = "0.12"
+
+# Storage
+rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite_migration = "1"
+
+# FFI
+uniffi = "0.29"
+
+# Utilities
+xattr = "1"
+chardetng = "0.1"
+encoding_rs = "0.8"
+natord = "1"
+
+# Testing
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

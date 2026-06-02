@@ -1,0 +1,24 @@
+# Based on http://shanesbrain.net/2008/7/9/using-xcode-with-git
+
+# xcode noise
+build/
+.DS_Store
+*.mode?v?
+*.mode?
+*.perspectivev3
+*.pbxuser
+project.xcworkspace/
+xcuserdata/
+
+# SVN
+.svn
+
+# osx noise
+.DS_Store
+profile
+
+Store Assets
+
+# Rust build artifacts — rebuild with: cd simple-comic-core && cargo build --release
+SimpleComicCore/Libraries/*.a
+simple-comic-core/target/
