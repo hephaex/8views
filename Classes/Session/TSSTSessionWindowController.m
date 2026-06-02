@@ -467,91 +467,55 @@ NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
 
 - (IBAction)pageEnd:(id)sender
 {
-	BOOL right = ([sender selectedIndex] > 0);
-	if(session.pageOrder ^ right)
+	// selectedIndex 0 = first page, 1 = last page (toolbar segment order)
+	if([sender selectedIndex] == 0)
 	{
-		[self firstPage:sender];
+		[self firstPage: sender];
 	}
 	else
 	{
-		[self lastPage:sender];
+		[self lastPage: sender];
 	}
 }
 
-/*! Method flips the page to the right calling nextPage or previousPage
-	depending on the prefered page ordering.
+/*! Advance one page (or page-pair) forward in the archive.
+    RIGHT key / right-side click / swipe-left in both LTR and RTL.
+    RTL affects the visual layout (lower index on right), not the
+    navigation direction: RIGHT always means "more of the story".
 */
 - (IBAction)pageRight:(id)sender
 {
 	[self setPageTurn: 2];
-	if(session.pageOrder)
-	{
-		[self nextPage];
-	}
-	else
-	{
-		[self previousPage];
-	}
+	[self nextPage];
 }
 
 
-/*! Method flips the page to the left calling nextPage or previousPage
-    depending on the prefered page ordering.
+/*! Go back one page (or page-pair) in the archive.
+    LEFT key / left-side click / swipe-right in both LTR and RTL.
 */
 - (IBAction)pageLeft:(id)sender
 {
 	[self setPageTurn: 1];
-	
-	if(session.pageOrder)
-	{
-		[self previousPage];
-	}
-	else
-	{
-		[self nextPage];
-	}
+	[self previousPage];
 }
 
 
 - (IBAction)shiftPageRight:(id)sender
 {
-	if(session.pageOrder)
-	{
-		[pageController selectNext: sender];
-	}
-	else
-	{
-		[pageController selectPrevious: sender];
-	}
+	[pageController selectNext: sender];
 }
 
 
 - (IBAction)shiftPageLeft:(id)sender
 {
-	if(session.pageOrder)
-	{
-		[pageController selectPrevious: sender];
-	}
-	else
-	{
-		[pageController selectNext: sender];
-	}
+	[pageController selectPrevious: sender];
 }
 
 
 - (IBAction)skipRight:(id)sender
 {
-	NSUInteger index;
-	if(session.pageOrder)
-	{
-		index = ([pageController selectionIndex] + 10);
-		index = index < [[pageController content] count] ? index : [[pageController content] count] - 1;
-	}
-	else
-	{
-		index = [pageController selectionIndex] > 10 ? [pageController selectionIndex] - 10 : 0;
-	}
-	
+	NSUInteger index = ([pageController selectionIndex] + 10);
+	index = index < [[pageController content] count] ? index : [[pageController content] count] - 1;
 	[pageController setSelectionIndex: index];
 }
 
@@ -559,15 +523,7 @@ NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
 - (IBAction)skipLeft:(id)sender
 {
 	NSUInteger index;
-	if(!session.pageOrder)
-	{
-		index = ([pageController selectionIndex] + 10);
-		index = index < [[pageController content] count] ? index : [[pageController content] count] - 1;
-	}
-	else
-	{
-		index = [pageController selectionIndex] > 10 ? [pageController selectionIndex] - 10 : 0;
-	}
+	index = [pageController selectionIndex] > 10 ? [pageController selectionIndex] - 10 : 0;
 	[pageController setSelectionIndex: index];
 }
 
@@ -1500,27 +1456,13 @@ NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
 
 - (BOOL)canTurnPageLeft
 {
-	if(session.pageOrder)
-    {
-        return [self canTurnPreviousPage];
-    }
-    else
-    {
-        return [self canTurnPageNext];
-    }
+    return [self canTurnPreviousPage];
 }
 
 
 - (BOOL)canTurnPageRight
 {
-	if(session.pageOrder)
-    {
-        return [self canTurnPageNext];
-    }
-    else
-    {
-        return [self canTurnPreviousPage];
-    }
+    return [self canTurnPageNext];
 }
 
 

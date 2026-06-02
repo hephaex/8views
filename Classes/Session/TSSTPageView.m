@@ -1185,23 +1185,22 @@ typedef struct {
 	int delta = 1000 * difference * multiplier;
 	TSSTTurn turn = TSSTTurnNone;
 	NSString * directionString = nil;
-	BOOL turnDirection = sessionController.session.pageOrder;
 	BOOL finishTurn = NO;
 	if(scrollKeys & TSSTArrowKeyUp)
 	{
 		scrollPoint.y += delta;
 		if(NSMaxY(visible) >= NSMaxY([self frame]))
 		{
-			turn = turnDirection ? TSSTTurnLeft : TSSTTurnRight;
+			turn = TSSTTurnLeft; // UP = go back = previousPage (pageLeft:)
 		}
 	}
-	
+
 	if (scrollKeys & TSSTArrowKeyDown)
 	{
 		scrollPoint.y -= delta;
 		if(scrollPoint.y <= 0)
 		{
-			turn = turnDirection ? TSSTTurnRight : TSSTTurnLeft;
+			turn = TSSTTurnRight; // DOWN = go forward = nextPage (pageRight:)
 		}
 	}
 	
