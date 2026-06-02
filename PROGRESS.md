@@ -1,7 +1,7 @@
 # Simple Comic — Rust 리팩토링 진행 상황
 
 > 시작: 2026-06-01
-> 현재 Phase: **Phase 6 완료** (Sprint 16 — TSSTPage.pageImage Rust 사전 스케일링)
+> 현재 Phase: **Phase 8 완료** (Sprint 22 — QuickLook Swift 신형 API Rust 교체)
 
 ---
 
@@ -15,10 +15,10 @@ Phase 4: 세션 스토리지     [~] 1/3 sprint (Sprint 10 — pages API)
 Phase 5: Swift FFI     [x] 3/3 sprint (Sprint 6+7+8 — 완료)
 Phase 6: UI 배선        [x] 6/6 완료 (Sprint 11-16)
 Phase 7: OCR 통합       [ ] 0/2 sprint
-Phase 8: QuickLook     [ ] 0/2 sprint
-Phase 9: 최종 검증      [ ] 0/2 sprint
+Phase 8: QuickLook     [x] 2/2 sprint (완료 — Sprint 20-22)
+Phase 9: 최종 검증      [~] 진행중 (Sprint 17-22)
 ────────────────────────────────────
-합계: 0/28 sprint
+합계: Sprint 22 완료 (2026-06-02)
 ```
 
 ---
@@ -635,12 +635,38 @@ git push origin arc
   - 시간 제한(~1초), 취소 감지, CGImageSource 폴백 유지
 
 **Phase 8 QuickLook 현황:**
-- ✅ `GenerateThumbnailForURL.m` (구형 API) — Rust partial-read (Sprint 20)
-- ✅ `GeneratePreviewForURL.m` (구형 API) — Rust 페이지네이션 (Sprint 21)
-- ⏳ `ThumbnailProvider.swift` (신형 API) — SimpleComicCore Xcode 링크 필요
-- ⏳ `PreviewProvider.swift` (신형 API) — SimpleComicCore Xcode 링크 필요
+- ✅ `GenerateThumbnailForURL.m` (구형 ObjC API) — Rust partial-read (Sprint 20)
+- ✅ `GeneratePreviewForURL.m` (구형 ObjC API) — Rust 페이지네이션 (Sprint 21)
+- ✅ `ThumbnailProvider.swift` (신형 Swift API) — Rust C FFI (Sprint 22)
+- ✅ `PreviewProvider.swift` (신형 Swift API) — Rust C FFI (Sprint 22)
 
-**⚠ 44 커밋 미push — GitHub push 필요 ⚠**
+**Phase 8 완료.**
+
+### Sprint 22 — Phase 8 완료: Swift QuickLook 신형 API Rust 교체 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass (변화 없음) |
+| clippy | 경고 0 |
+| 커밋 | 11f5e63 (cleanup) + 15eb446 (Sprint 22) |
+
+**완료:**
+- `ThumbnailProvider.swift`: XADArchive 제거
+  - coverName 없는 경우 → `sc_archive_read_first_image` (최적화 경로)
+  - coverName 있는 경우 → `sc_archive_open_pages` + 이름 매칭 + `sc_archive_read_page`
+- `PreviewProvider.swift`: XADArchive 제거
+  - `sc_archive_open_pages` → count 획득 → `sc_archive_read_page` 루프
+  - 원본 페이지 선택 로직 (index >= 25 || last) 보존
+- `PartialArchiveParser.swift`, `QuickComicCommonSwift.swift`: XADMaster 의존성 제거 (빈 클래스로 교체)
+- `project.pbxproj`: 6개 빌드 설정에 HEADER_SEARCH_PATHS / LIBRARY_SEARCH_PATHS / OTHER_LDFLAGS 추가
+  - 대상: 메인 앱 Debug/Release, QuickComic Thumbnailer Debug/Release, QuickComic Preview Debug/Release
+
+**Sprint 23 후보 (리뷰에서 도출):**
+- **HIGH**: `sc_archive_read_page` N+1 archive 재오픈 성능 — QLPreviewReply 클로저에서 count회 반복 시 지연
+  → `sc_archive_open_once` 스타일 핸들 캐시 API 추가 검토
+- Phase 7 OCR 통합 또는 Phase 9 최종 검증 마무리
+
+**⚠ 48 커밋 미push — GitHub push 필요 ⚠**
 
 ---
 
