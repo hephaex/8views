@@ -70,3 +70,11 @@ opt-level = 3
 lto = true
 codegen-units = 1
 strip = true
+
+# staticlib profile: LTO disabled so Xcode ld64 can resolve #[no_mangle] C symbols.
+# Fat/thin LTO produces LLVM bitcode incompatible with Apple ld64's LLVM version.
+# Pure native Mach-O objects are required for cross-toolchain static linking.
+[profile.release-static]
+inherits = "release"
+lto = false
+strip = false

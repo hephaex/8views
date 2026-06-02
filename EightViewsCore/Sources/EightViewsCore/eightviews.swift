@@ -25,13 +25,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_simplecomic_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_eightviews_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_simplecomic_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_eightviews_rustbuffer_free(self, $0) }
     }
 }
 
@@ -281,7 +281,7 @@ private func makeRustCall<T, E: Swift.Error>(
     _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T,
     errorHandler: ((RustBuffer) throws -> E)?
 ) throws -> T {
-    uniffiEnsureSimplecomicInitialized()
+    uniffiEnsureEightviewsInitialized()
     var callStatus = RustCallStatus.init()
     let returnedVal = callback(&callStatus)
     try uniffiCheckCallStatus(callStatus: callStatus, errorHandler: errorHandler)
@@ -638,6 +638,102 @@ public func FfiConverterTypeArchiveEntryRecord_lift(_ buf: RustBuffer) throws ->
 #endif
 public func FfiConverterTypeArchiveEntryRecord_lower(_ value: ArchiveEntryRecord) -> RustBuffer {
     return FfiConverterTypeArchiveEntryRecord.lower(value)
+}
+
+
+public struct OcrSearchResult {
+    /**
+     * Path to the archive that contains the matching page.
+     */
+    public var archivePath: String
+    /**
+     * Zero-based index of the matching page within the archive.
+     */
+    public var pageIndex: UInt32
+    /**
+     * Short excerpt with surrounding context; matched terms wrapped in <b>…</b>.
+     */
+    public var snippet: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Path to the archive that contains the matching page.
+         */archivePath: String, 
+        /**
+         * Zero-based index of the matching page within the archive.
+         */pageIndex: UInt32, 
+        /**
+         * Short excerpt with surrounding context; matched terms wrapped in <b>…</b>.
+         */snippet: String) {
+        self.archivePath = archivePath
+        self.pageIndex = pageIndex
+        self.snippet = snippet
+    }
+}
+
+#if compiler(>=6)
+extension OcrSearchResult: Sendable {}
+#endif
+
+
+extension OcrSearchResult: Equatable, Hashable {
+    public static func ==(lhs: OcrSearchResult, rhs: OcrSearchResult) -> Bool {
+        if lhs.archivePath != rhs.archivePath {
+            return false
+        }
+        if lhs.pageIndex != rhs.pageIndex {
+            return false
+        }
+        if lhs.snippet != rhs.snippet {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(archivePath)
+        hasher.combine(pageIndex)
+        hasher.combine(snippet)
+    }
+}
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOcrSearchResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OcrSearchResult {
+        return
+            try OcrSearchResult(
+                archivePath: FfiConverterString.read(from: &buf), 
+                pageIndex: FfiConverterUInt32.read(from: &buf), 
+                snippet: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OcrSearchResult, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.archivePath, into: &buf)
+        FfiConverterUInt32.write(value.pageIndex, into: &buf)
+        FfiConverterString.write(value.snippet, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOcrSearchResult_lift(_ buf: RustBuffer) throws -> OcrSearchResult {
+    return try FfiConverterTypeOcrSearchResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOcrSearchResult_lower(_ value: OcrSearchResult) -> RustBuffer {
+    return FfiConverterTypeOcrSearchResult.lower(value)
 }
 
 
@@ -1060,6 +1156,31 @@ fileprivate struct FfiConverterSequenceTypeArchiveEntryRecord: FfiConverterRustB
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeOcrSearchResult: FfiConverterRustBuffer {
+    typealias SwiftType = [OcrSearchResult]
+
+    public static func write(_ value: [OcrSearchResult], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeOcrSearchResult.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [OcrSearchResult] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [OcrSearchResult]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeOcrSearchResult.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeThumbnailRecord: FfiConverterRustBuffer {
     typealias SwiftType = [ThumbnailRecord]
 
@@ -1089,7 +1210,7 @@ fileprivate struct FfiConverterSequenceTypeThumbnailRecord: FfiConverterRustBuff
  */
 public func archiveIsSupported(archivePath: String) -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
-    uniffi_simplecomic_fn_func_archive_is_supported(
+    uniffi_eightviews_fn_func_archive_is_supported(
         FfiConverterString.lower(archivePath),$0
     )
 })
@@ -1101,7 +1222,7 @@ public func archiveIsSupported(archivePath: String) -> Bool  {
  */
 public func archiveListPages(archivePath: String)throws  -> [ArchiveEntryRecord]  {
     return try  FfiConverterSequenceTypeArchiveEntryRecord.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_archive_list_pages(
+    uniffi_eightviews_fn_func_archive_list_pages(
         FfiConverterString.lower(archivePath),$0
     )
 })
@@ -1114,7 +1235,7 @@ public func archiveListPages(archivePath: String)throws  -> [ArchiveEntryRecord]
  */
 public func archiveReadFirstImage(archivePath: String)throws  -> Data  {
     return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_archive_read_first_image(
+    uniffi_eightviews_fn_func_archive_read_first_image(
         FfiConverterString.lower(archivePath),$0
     )
 })
@@ -1127,7 +1248,7 @@ public func archiveReadFirstImage(archivePath: String)throws  -> Data  {
  */
 public func archiveReadPage(archivePath: String, index: UInt32)throws  -> Data  {
     return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_archive_read_page(
+    uniffi_eightviews_fn_func_archive_read_page(
         FfiConverterString.lower(archivePath),
         FfiConverterUInt32.lower(index),$0
     )
@@ -1141,7 +1262,7 @@ public func archiveReadPage(archivePath: String, index: UInt32)throws  -> Data  
  */
 public func generateArchiveThumbnails(archivePath: String, thumbSize: UInt32)throws  -> [ThumbnailRecord]  {
     return try  FfiConverterSequenceTypeThumbnailRecord.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_generate_archive_thumbnails(
+    uniffi_eightviews_fn_func_generate_archive_thumbnails(
         FfiConverterString.lower(archivePath),
         FfiConverterUInt32.lower(thumbSize),$0
     )
@@ -1155,9 +1276,23 @@ public func generateArchiveThumbnails(archivePath: String, thumbSize: UInt32)thr
  */
 public func generateThumbnail(imageBytes: Data, thumbSize: UInt32)throws  -> Data  {
     return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_generate_thumbnail(
+    uniffi_eightviews_fn_func_generate_thumbnail(
         FfiConverterData.lower(imageBytes),
         FfiConverterUInt32.lower(thumbSize),$0
+    )
+})
+}
+/**
+ * Search cached OCR text within a single archive.
+ *
+ * Results are ordered by page index.  Returns an empty list for empty queries
+ * or archives with no cached OCR data.
+ */
+public func ocrSearch(archivePath: String, query: String)throws  -> [OcrSearchResult]  {
+    return try  FfiConverterSequenceTypeOcrSearchResult.lift(try rustCallWithError(FfiConverterTypeScError_lift) {
+    uniffi_eightviews_fn_func_ocr_search(
+        FfiConverterString.lower(archivePath),
+        FfiConverterString.lower(query),$0
     )
 })
 }
@@ -1166,7 +1301,7 @@ public func generateThumbnail(imageBytes: Data, thumbSize: UInt32)throws  -> Dat
  */
 public func scLibraryVersion() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
-    uniffi_simplecomic_fn_func_sc_library_version($0
+    uniffi_eightviews_fn_func_sc_library_version($0
     )
 })
 }
@@ -1176,7 +1311,7 @@ public func scLibraryVersion() -> String  {
  * No-op if no record exists; never throws.
  */
 public func sessionDelete(archivePath: String)  {try! rustCall() {
-    uniffi_simplecomic_fn_func_session_delete(
+    uniffi_eightviews_fn_func_session_delete(
         FfiConverterString.lower(archivePath),$0
     )
 }
@@ -1189,7 +1324,7 @@ public func sessionDelete(archivePath: String)  {try! rustCall() {
  */
 public func sessionLoad(archivePath: String)throws  -> SessionStateRecord  {
     return try  FfiConverterTypeSessionStateRecord_lift(try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_session_load(
+    uniffi_eightviews_fn_func_session_load(
         FfiConverterString.lower(archivePath),$0
     )
 })
@@ -1198,7 +1333,7 @@ public func sessionLoad(archivePath: String)throws  -> SessionStateRecord  {
  * Persist session state for an archive, creating or replacing the record.
  */
 public func sessionSave(archivePath: String, state: SessionStateRecord)throws   {try rustCallWithError(FfiConverterTypeScError_lift) {
-    uniffi_simplecomic_fn_func_session_save(
+    uniffi_eightviews_fn_func_session_save(
         FfiConverterString.lower(archivePath),
         FfiConverterTypeSessionStateRecord_lower(state),$0
     )
@@ -1216,38 +1351,41 @@ private let initializationResult: InitializationResult = {
     // Get the bindings contract version from our ComponentInterface
     let bindings_contract_version = 29
     // Get the scaffolding contract version by calling the into the dylib
-    let scaffolding_contract_version = ffi_simplecomic_uniffi_contract_version()
+    let scaffolding_contract_version = ffi_eightviews_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_simplecomic_checksum_func_archive_is_supported() != 57715) {
+    if (uniffi_eightviews_checksum_func_archive_is_supported() != 20066) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_archive_list_pages() != 35364) {
+    if (uniffi_eightviews_checksum_func_archive_list_pages() != 54808) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_archive_read_first_image() != 20476) {
+    if (uniffi_eightviews_checksum_func_archive_read_first_image() != 62461) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_archive_read_page() != 11047) {
+    if (uniffi_eightviews_checksum_func_archive_read_page() != 16220) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_generate_archive_thumbnails() != 26387) {
+    if (uniffi_eightviews_checksum_func_generate_archive_thumbnails() != 63533) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_generate_thumbnail() != 61945) {
+    if (uniffi_eightviews_checksum_func_generate_thumbnail() != 48397) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_sc_library_version() != 56668) {
+    if (uniffi_eightviews_checksum_func_ocr_search() != 1788) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_session_delete() != 35821) {
+    if (uniffi_eightviews_checksum_func_sc_library_version() != 37413) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_session_load() != 7683) {
+    if (uniffi_eightviews_checksum_func_session_delete() != 2994) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_simplecomic_checksum_func_session_save() != 40775) {
+    if (uniffi_eightviews_checksum_func_session_load() != 30142) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_eightviews_checksum_func_session_save() != 60005) {
         return InitializationResult.apiChecksumMismatch
     }
 
@@ -1256,7 +1394,7 @@ private let initializationResult: InitializationResult = {
 
 // Make the ensure init function public so that other modules which have external type references to
 // our types can call it.
-public func uniffiEnsureSimplecomicInitialized() {
+public func uniffiEnsureEightviewsInitialized() {
     switch initializationResult {
     case .ok:
         break

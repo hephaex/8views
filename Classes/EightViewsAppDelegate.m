@@ -25,7 +25,7 @@
 #import "TSSTManagedGroup.h"
 #import "TSSTManagedSession.h"
 #import "TSSTCustomValueTransformers.h"
-#import "Simple_Comic-Swift.h"
+#import "EightViews-Swift.h"
 #import "TSSTManagedSession+CoreDataProperties.h"
 #import "OCRTracker.h"
 #import "sc_extras.h"

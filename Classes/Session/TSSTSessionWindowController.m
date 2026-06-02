@@ -34,7 +34,7 @@
 #import "GeneratedAssetSymbols.h"
 #import "sc_extras.h"
 
-#import "Simple_Comic-Swift.h"
+#import "EightViews-Swift.h"
 
 NSString * const TSSTMouseDragNotification = @"SCMouseDragNotification";
 

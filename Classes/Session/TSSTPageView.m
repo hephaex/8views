@@ -25,7 +25,7 @@
 #import "EightViewsAppDelegate.h"
 #import "TSSTSessionWindowController.h"
 #import "TSSTManagedSession.h"
-#import "Simple_Comic-Swift.h"
+#import "EightViews-Swift.h"
 
 typedef NS_ENUM(int, TSSTTurn) {
 	TSSTTurnNone = 0,

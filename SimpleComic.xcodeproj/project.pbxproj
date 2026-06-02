@@ -1534,6 +1534,21 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/EightViewsCore/Sources/eightviewsFFI";
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/EightViewsCore/Libraries";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-leightviews",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-lresolv",
+					"-framework",
+					Security,
+					"-framework",
+					CoreFoundation,
+					"-L/opt/homebrew/lib",
+				);
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 360;
 				DEAD_CODE_STRIPPING = YES;
@@ -1567,6 +1582,21 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/EightViewsCore/Sources/eightviewsFFI";
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/EightViewsCore/Libraries";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-leightviews",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-lresolv",
+					"-framework",
+					Security,
+					"-framework",
+					CoreFoundation,
+					"-L/opt/homebrew/lib",
+				);
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 360;
 				DEAD_CODE_STRIPPING = YES;
@@ -1770,6 +1800,7 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/EightViewsCore/Sources/eightviewsFFI";
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "8views";
+				PRODUCT_MODULE_NAME = EightViews;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
@@ -1818,6 +1849,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "8views";
+				PRODUCT_MODULE_NAME = EightViews;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
