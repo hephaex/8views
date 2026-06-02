@@ -5,47 +5,8 @@
 //  Created by C.W. Betts on 12/11/22.
 //  Copyright © 2022 Dancing Tortoise Software. All rights reserved.
 //
+//  fileList(for:) and fileSort replaced by Rust sc_archive_open_pages in Sprint 22.
+//  File retained to avoid Xcode project modification.
+//
 
-import Cocoa
-import XADMaster
-import UniformTypeIdentifiers
-
-
-nonisolated(unsafe) internal let fileSort: [NSSortDescriptor] = {
-	let sort = TSSTSortDescriptor(key: "name", ascending: true)
-	return [sort]
-}()
-
-private let imageFileTypes = {
-	let imageTypes = NSImage.imageTypes
-	var imageExtensions = Set<String>()
-	for uti in imageTypes {
-		if let aUT = UTType(uti),
-		   let tmpExt = aUT.tags[.filenameExtension] {
-			imageExtensions.formUnion(tmpExt)
-		}
-	}
-	// Some older archives might store jpeg images as jfif
-	imageExtensions.insert("jfif")
-	imageExtensions.insert("jfi")
-	return imageExtensions
-}()
-
-internal func fileList(for archive: XADArchive) -> [[String: Any]] {
-	let numEntries = archive.numberOfEntries
-	var fileDescriptions = [[String: Any]]()
-	fileDescriptions.reserveCapacity(numEntries)
-	
-	for index in 0 ..< numEntries {
-		if let fileName = archive.name(ofEntry: index),
-		   let rawName = archive.name(ofEntry: index),
-		   imageFileTypes.contains((fileName as NSString).pathExtension.lowercased()) {
-			let fileDescription: [String : Any] = ["name": fileName,
-												   "index": index,
-												   "rawName": rawName]
-			fileDescriptions.append(fileDescription)
-		}
-	}
-	
-	return fileDescriptions
-}
+import Foundation

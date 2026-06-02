@@ -5,3 +5,4 @@
 #import "TSSTSortDescriptor.h"
 #import "UKXattrMetadataStore.h"
 #import "TSSTImageUtilities.h"
+#import "sc_extras.h"

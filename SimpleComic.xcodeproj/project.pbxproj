@@ -1469,6 +1469,15 @@
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Sources/simplecomicFFI";
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Libraries";
+				OTHER_LDFLAGS = (
+					"-lsimplecomic",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-L/opt/homebrew/lib",
+				);
 				SWIFT_OBJC_BRIDGING_HEADER = "QuickComic/QuickComic Thumbnailer/QuickComic Thumbnailer-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -1503,6 +1512,15 @@
 				MARKETING_VERSION = 1.9.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ToWatchList.SimpleComic.QuickComic-Thumbnailer";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Sources/simplecomicFFI";
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Libraries";
+				OTHER_LDFLAGS = (
+					"-lsimplecomic",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-L/opt/homebrew/lib",
+				);
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "QuickComic/QuickComic Thumbnailer/QuickComic Thumbnailer-Bridging-Header.h";
@@ -1605,6 +1623,15 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ToWatchList.SimpleComic.QuickComic-Preview";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Sources/simplecomicFFI";
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Libraries";
+				OTHER_LDFLAGS = (
+					"-lsimplecomic",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-L/opt/homebrew/lib",
+				);
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "QuickComic/QuickComic Preview/QuickComic Preview-Bridging-Header.h";
@@ -1640,6 +1667,15 @@
 				MARKETING_VERSION = 1.9.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ToWatchList.SimpleComic.QuickComic-Preview";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Sources/simplecomicFFI";
+				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Libraries";
+				OTHER_LDFLAGS = (
+					"-lsimplecomic",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-L/opt/homebrew/lib",
+				);
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "QuickComic/QuickComic Preview/QuickComic Preview-Bridging-Header.h";
@@ -1731,16 +1767,26 @@
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Sources/simplecomicFFI";
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Simple Comic";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)",
+					"$(SRCROOT)/SimpleComicCore/Libraries",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MARKETING_VERSION = 1.9.9;
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-lsimplecomic",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-L/opt/homebrew/lib",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ToWatchList.SimpleComic;
 				PRODUCT_NAME = "Simple Comic";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1776,9 +1822,20 @@
 					"@loader_path/../Frameworks",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/SimpleComicCore/Sources/simplecomicFFI";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)",
+					"$(SRCROOT)/SimpleComicCore/Libraries",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MARKETING_VERSION = 1.9.9;
+				OTHER_LDFLAGS = (
+					"-lsimplecomic",
+					"-lbz2",
+					"-llzma",
+					"-lc++",
+					"-L/opt/homebrew/lib",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ToWatchList.SimpleComic;
 				PRODUCT_NAME = "Simple Comic";
 				PROVISIONING_PROFILE_SPECIFIER = "";
