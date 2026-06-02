@@ -39,38 +39,36 @@ class PreviewProvider: QLPreviewProvider, QLPreviewingController {
             ])
         }
 
-        // Determine PDF page size from the first image
-        let pdfSize: CGSize
-        var firstLen = 0
-        var firstErr: Int32 = 0
-        if let ptr = sc_archive_read_page(archivePath, 0, &firstLen, &firstErr) {
-            let data = Data(bytes: ptr, count: firstLen)
-            sc_free_bytes(ptr, firstLen)
-            pdfSize = NSImage(data: data)?.size ?? CGSize(width: 800, height: 600)
-        } else {
-            pdfSize = CGSize(width: 800, height: 600)
-        }
+        // Pre-fetch the pages we need (first 25 + last) before the QLPreviewReply closure.
+        // This avoids N+1 archive re-opens inside the closure (sc_archive_read_page is
+        // path-keyed and opens the archive anew each call).
+        var prefetchedPages = [Data?]()
+        prefetchedPages.reserveCapacity(min(count, 26))
 
-        let capturedPath = archivePath
-        let capturedCount = count
-        let reply = QLPreviewReply(forPDFWithPageSize: pdfSize) { _ in
-            let document = PDFDocument()
-            for index in 0..<capturedCount {
-                // Mirror original: include pages at index >= 25 and the last page
-                guard index >= 25 || index == capturedCount - 1 else { continue }
-
-                var pageLen = 0
-                var pageErr: Int32 = 0
-                guard let ptr = sc_archive_read_page(capturedPath, UInt32(index), &pageLen, &pageErr) else {
-                    let badPage = PDFPage()
-                    badPage.setBounds(NSRect(origin: .zero, size: pdfSize), for: .mediaBox)
-                    document.insert(badPage, at: document.pageCount)
-                    continue
-                }
+        for index in 0..<count {
+            // Show the first 25 pages + last page (mirrors original intent).
+            guard index < 25 || index == count - 1 else { continue }
+            var pageLen = 0
+            var pageErr: Int32 = 0
+            if let ptr = sc_archive_read_page(archivePath, UInt32(index), &pageLen, &pageErr) {
                 let data = Data(bytes: ptr, count: pageLen)
                 sc_free_bytes(ptr, pageLen)
+                prefetchedPages.append(data)
+            } else {
+                prefetchedPages.append(nil)
+            }
+        }
 
-                guard let image = NSImage(data: data),
+        // Determine PDF page size from the first successfully pre-fetched image.
+        let pdfSize: CGSize = prefetchedPages
+            .compactMap { $0.flatMap { NSImage(data: $0)?.size } }
+            .first ?? CGSize(width: 800, height: 600)
+
+        let reply = QLPreviewReply(forPDFWithPageSize: pdfSize) { _ in
+            let document = PDFDocument()
+            for pageData in prefetchedPages {
+                guard let pageData,
+                      let image = NSImage(data: pageData),
                       let page = newPDFPage(from: image) else {
                     let badPage = PDFPage()
                     badPage.setBounds(NSRect(origin: .zero, size: pdfSize), for: .mediaBox)
