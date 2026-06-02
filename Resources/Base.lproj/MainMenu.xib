@@ -15,10 +15,10 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <menu title="MainMenu" systemMenu="main" id="29" userLabel="MainMenu">
             <items>
-                <menuItem title="Simple Comic" id="56">
-                    <menu key="submenu" title="Simple Comic" systemMenu="apple" id="57">
+                <menuItem title="8views" id="56">
+                    <menu key="submenu" title="8views" systemMenu="apple" id="57">
                         <items>
-                            <menuItem title="About Simple Comic" id="58">
+                            <menuItem title="About 8views" id="58">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="orderFrontStandardAboutPanel:" target="-2" id="142"/>
@@ -41,7 +41,7 @@
                             <menuItem isSeparatorItem="YES" id="144">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Hide Simple Comic" keyEquivalent="h" id="134">
+                            <menuItem title="Hide 8views" keyEquivalent="h" id="134">
                                 <connections>
                                     <action selector="hide:" target="-2" id="152"/>
                                 </connections>
@@ -60,7 +60,7 @@
                             <menuItem isSeparatorItem="YES" id="149">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Quit Simple Comic" keyEquivalent="q" id="136">
+                            <menuItem title="Quit 8views" keyEquivalent="q" id="136">
                                 <connections>
                                     <action selector="terminate:" target="-2" id="139"/>
                                 </connections>
@@ -400,7 +400,7 @@ DQ
                 <menuItem title="Help" id="1206">
                     <menu key="submenu" title="Help" id="1207">
                         <items>
-                            <menuItem title="Simple Comic Help" keyEquivalent="?" id="1208">
+                            <menuItem title="8views Help" keyEquivalent="?" id="1208">
                                 <connections>
                                     <action selector="showHelp:" target="-1" id="1209"/>
                                 </connections>
@@ -414,7 +414,7 @@ DQ
             </connections>
             <point key="canvasLocation" x="149" y="77"/>
         </menu>
-        <customObject id="205" userLabel="Application Delegate" customClass="SimpleComicAppDelegate">
+        <customObject id="205" userLabel="Application Delegate" customClass="EightViewsAppDelegate">
             <connections>
                 <outlet property="encodingPanel" destination="1080" id="1091"/>
                 <outlet property="encodingPopup" destination="1082" id="1868"/>

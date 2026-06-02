@@ -19,6 +19,6 @@ profile
 
 Store Assets
 
-# Rust build artifacts — rebuild with: cd simple-comic-core && cargo build --release
-SimpleComicCore/Libraries/*.a
-simple-comic-core/target/
+# Rust build artifacts — rebuild with: cd 8views-core && cargo build --release
+EightViewsCore/Libraries/*.a
+8views-core/target/

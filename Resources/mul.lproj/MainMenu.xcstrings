@@ -266,103 +266,103 @@
       }
     },
     "56.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Simple Comic\"; ObjectID = \"56\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"8views\"; ObjectID = \"56\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         }
       }
     },
     "57.title" : {
-      "comment" : "Class = \"NSMenu\"; title = \"Simple Comic\"; ObjectID = \"57\";",
+      "comment" : "Class = \"NSMenu\"; title = \"8views\"; ObjectID = \"57\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         }
       }
     },
     "58.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"About Simple Comic\"; ObjectID = \"58\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"About 8views\"; ObjectID = \"58\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Über Simple Comic"
+            "value" : "Über 8views"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "About Simple Comic"
+            "value" : "About 8views"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About Simple Comic"
+            "value" : "About 8views"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "À propos de Simple Comic"
+            "value" : "À propos de 8views"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Informazioni su Simple Comic"
+            "value" : "Informazioni su 8views"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic について"
+            "value" : "8views について"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic 에 대하여"
+            "value" : "8views 에 대하여"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sobre o Simple Comic"
+            "value" : "Sobre o 8views"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于 Simple Comic"
+            "value" : "关于 8views"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關於 Simple Comic"
+            "value" : "關於 8views"
           }
         }
       }
@@ -566,115 +566,115 @@
       }
     },
     "134.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Hide Simple Comic\"; ObjectID = \"134\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Hide 8views\"; ObjectID = \"134\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic ausblenden"
+            "value" : "8views ausblenden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hide Simple Comic"
+            "value" : "Hide 8views"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hide Simple Comic"
+            "value" : "Hide 8views"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masquer Simple Comic"
+            "value" : "Masquer 8views"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nascondi Simple Comic"
+            "value" : "Nascondi 8views"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic を隠す"
+            "value" : "8views を隠す"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic 을 가리기"
+            "value" : "8views 을 가리기"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar Simple Comic"
+            "value" : "Ocultar 8views"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隐藏 Simple Comic"
+            "value" : "隐藏 8views"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隱藏 Simple Comic"
+            "value" : "隱藏 8views"
           }
         }
       }
     },
     "136.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Quit Simple Comic\"; ObjectID = \"136\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"Quit 8views\"; ObjectID = \"136\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic beenden"
+            "value" : "8views beenden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Quit Simple Comic"
+            "value" : "Quit 8views"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quit Simple Comic"
+            "value" : "Quit 8views"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quitter Simple Comic"
+            "value" : "Quitter 8views"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esci da Simple Comic"
+            "value" : "Esci da 8views"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic を終了"
+            "value" : "8views を終了"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic 를 종료"
+            "value" : "8views 를 종료"
           }
         },
         "pt" : {
@@ -686,13 +686,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "退出 Simple Comic"
+            "value" : "退出 8views"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "結束 Simple Comic"
+            "value" : "結束 8views"
           }
         }
       }
@@ -3140,67 +3140,67 @@
       }
     },
     "1208.title" : {
-      "comment" : "Class = \"NSMenuItem\"; title = \"Simple Comic Help\"; ObjectID = \"1208\";",
+      "comment" : "Class = \"NSMenuItem\"; title = \"8views Help\"; ObjectID = \"1208\";",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic-Hilfe"
+            "value" : "8views-Hilfe"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Simple Comic Help"
+            "value" : "8views Help"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic Help"
+            "value" : "8views Help"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aide Simple Comic"
+            "value" : "Aide 8views"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aiuto di Simple Comic"
+            "value" : "Aiuto di 8views"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comicヘルプ"
+            "value" : "8viewsヘルプ"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic 도움말"
+            "value" : "8views 도움말"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajuda do Simple Comic"
+            "value" : "Ajuda do 8views"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic 帮助"
+            "value" : "8views 帮助"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic 輔助說明"
+            "value" : "8views 輔助說明"
           }
         }
       }

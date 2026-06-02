@@ -100,19 +100,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simple Comic"
+            "value" : "8views"
           }
         },
         "ja" : {
@@ -129,7 +129,7 @@
         }
       }
     },
-    "com.dancingtortoise.simplecomic.cbt" : {
+    "io.github.hephaex.8views.cbt" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
