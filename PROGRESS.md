@@ -666,7 +666,43 @@ git push origin arc
   → `sc_archive_open_once` 스타일 핸들 캐시 API 추가 검토
 - Phase 7 OCR 통합 또는 Phase 9 최종 검증 마무리
 
-**⚠ 48 커밋 미push — GitHub push 필요 ⚠**
+### Sprint 23 — PreviewProvider 정리 + Phase 9 Sprint 27 벤치마크 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 116 pass / 0 fail |
+| clippy | 경고 0 |
+| 커밋 | c46679b + a4265f9 |
+
+**사전 정리 (PreviewProvider):**
+- `index >= 25` → `index < 25` 버그 수정 (처음 25페이지 + 마지막 페이지 표시)
+- Pre-fetch 패턴: `providePreview` async body에서 페이지 미리 읽기 → 클로저 내 N+1 아카이브 재오픈 제거
+
+**Phase 9 Sprint 27 — 200페이지 벤치마크 검증:**
+
+| 지표 | PLAN.md 목표 | 실측값 | 판정 |
+|------|-------------|--------|------|
+| 아카이브 오픈 (200p CBZ) | < 500 ms | 1.13 ms | ✅ 443× 여유 |
+| 페이지 전환 (read_page 200p) | < 50 ms | 2.01 ms | ✅ 25× 여유 |
+| QuickLook 썸네일 (first image 200p) | < 1 s | 1.72 ms | ✅ 580× 여유 |
+| 썸네일 병렬 (200p) | < 3 s | 25.4 ms | ✅ 118× 여유 |
+| 메모리 (200p CBZ) | < 200 MB | ⏳ Instruments 필요 | 미측정 |
+
+**잔여 Phase 9 작업 (Sprint 28):**
+- 메모리 검증: Instruments Leaks/Allocations — Xcode에서 직접 실행 필요
+- Core Data 의존성 제거: `Sessions_DataModel.xcdatamodeld` 삭제 (Phase 4 마이그레이션 완료 후)
+- CHANGELOG v2.0.0 + 태그 생성
+
+**ObjC 데드 코드 감사 결과:**
+- DTPartialArchiveParser, TSSTSortDescriptor, TSSTImageUtilities, UKXattrMetadataStore — 모두 여전히 사용 중 (제거 불가)
+- 잔여 XADMaster 의존성: TSSTManagedGroup.m (중첩 아카이브/고체 RAR), TSSTSessionWindowController.m (cover name lookup), SimpleComicAppDelegate.m (archiveTypes) — Phase 2 edge case, 의도적 유지
+
+**⚠ 52 커밋 미push — GitHub 포크 필요 ⚠**
+```
+# 자신의 포크에 push:
+git remote add mine git@github.com:hephaex/Simple-Comic.git
+git push mine arc
+```
 
 ---
 
