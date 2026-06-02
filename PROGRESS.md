@@ -620,6 +620,28 @@ git remote set-url origin git@github.com:MaddTheSane/Simple-Comic.git
 git push origin arc
 ```
 
+### Sprint 21 — Phase 8: QuickLook 미리보기 Rust 완성 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass |
+| clippy | 경고 0 |
+| 커밋 | 394bbd1 |
+
+**완료:**
+- `GeneratePreviewForURL.m`: XADArchive 열거 + `fileListForArchive` + `fileSort` 제거
+  - `sc_archive_open_pages` → 자연 정렬 페이지 목록
+  - `sc_archive_read_page` → 페이지별 이미지 데이터
+  - 시간 제한(~1초), 취소 감지, CGImageSource 폴백 유지
+
+**Phase 8 QuickLook 현황:**
+- ✅ `GenerateThumbnailForURL.m` (구형 API) — Rust partial-read (Sprint 20)
+- ✅ `GeneratePreviewForURL.m` (구형 API) — Rust 페이지네이션 (Sprint 21)
+- ⏳ `ThumbnailProvider.swift` (신형 API) — SimpleComicCore Xcode 링크 필요
+- ⏳ `PreviewProvider.swift` (신형 API) — SimpleComicCore Xcode 링크 필요
+
+**⚠ 44 커밋 미push — GitHub push 필요 ⚠**
+
 ---
 
 *최종 업데이트: 2026-06-02*
