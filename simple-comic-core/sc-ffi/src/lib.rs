@@ -83,7 +83,7 @@ impl From<anyhow::Error> for ScError {
 /// not free it.
 #[no_mangle]
 pub extern "C" fn sc_version() -> *const std::ffi::c_char {
-    c"0.1.0".as_ptr()
+    c"0.2.0-alpha".as_ptr()
 }
 
 // ── ScPageList opaque handle — open-once enumeration ─────────────────────────

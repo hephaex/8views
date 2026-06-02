@@ -26,13 +26,21 @@ GitHub collects data when you interact with the project here, but we can't chang
 
 The `arc` branch is an active refactoring to a **Rust core + Swift/ObjC UI** hybrid architecture.
 
-**Status: Phase 6 complete (2026-06-02)**
+**Status: v2.0.0-alpha (2026-06-02) — Phases 1-6 + 8-9 complete**
 
-- Archive reading (ZIP/CBZ/RAR/CBR/7z/TAR) via Rust `sc-archive`
-- Image pipeline (scale, rotate, composite, thumbnail) via Rust `sc-image`
-- Session persistence (SQLite) via Rust `sc-storage`
-- C FFI layer (`sc_extras.h`) bridging Rust → ObjC
-- `SimpleComicCore` Swift Package wrapping the Rust static library
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Archive engine (ZIP/CBZ/RAR/CBR/7z/TAR) | ✅ Rust | `sc-archive` |
+| Image pipeline (scale/rotate/composite/thumbnail) | ✅ Rust | `sc-image` |
+| Session persistence (SQLite) | ✅ Rust | `sc-storage`, dual-write with Core Data |
+| C FFI bridge (`sc_extras.h`) | ✅ | ObjC ↔ Rust |
+| Swift Package (`SimpleComicCore`) | ✅ | uniffi bindings |
+| UI wiring (AppDelegate, SessionWindowController, PageView) | ✅ Rust | ObjC calls Rust |
+| QuickLook thumbnails + previews | ✅ Rust | Both ObjC and Swift extension APIs |
+| Performance (PLAN.md targets) | ✅ | All 4 measurable targets met |
+| OCR text search index | ⏳ Deferred | Vision stays in Swift |
+| Core Data → SQLite migration tool | ⏳ Phase 4 | Existing sessions not migrated |
+| Memory validation (Instruments) | ⏳ | Requires Xcode Instruments |
 
 ### Building the Rust core
 

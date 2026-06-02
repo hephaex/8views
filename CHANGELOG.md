@@ -1,6 +1,91 @@
 # Changelog
 
-All notable changes to Simple Comic Rust refactoring.
+All notable changes to the Simple Comic Rust core refactoring (`arc` branch).
+
+---
+
+## [2.0.0-alpha] — 2026-06-02
+
+### Summary
+
+Hybrid Rust core + Swift/ObjC UI architecture. Archive parsing, image pipeline,
+session storage, and QuickLook thumbnail/preview are now handled by the Rust layer
+(`libsimplecomic.a`). The Swift UI layer (AppKit, Touch Bar, Core Data) is retained.
+
+### Known Limitations
+
+- **Core Data sessions**: New sessions are dual-written (Core Data + Rust SQLite).
+  Existing Core Data sessions are not migrated to Rust automatically. A migration
+  tool (Phase 4) is planned but not included in this alpha.
+- **OCR text search**: Phase 7 deferred. Vision framework stays in Swift; the Rust
+  search index (`aho-corasick`/`tantivy`) is not yet connected.
+- **Memory validation**: Instruments leak/allocation profiling not yet completed.
+  Benchmarked archive and image operations are within PLAN.md targets.
+- **XADMaster dependency retained** for solid RAR archives, nested archives, PDF
+  extraction, and cover-name lookup (TSSTManagedGroup, TSSTSessionWindowController,
+  SimpleComicAppDelegate). Full removal requires a Rust page-cache API.
+
+---
+
+## Phase 9: 성능 검증 (2026-06-02)
+
+### Performance vs PLAN.md Targets (Sprints 17, 23)
+
+| Metric | Target | Measured | Result |
+|--------|--------|---------|--------|
+| Archive open+list (200p CBZ) | < 500 ms | 1.13 ms | ✅ 443× |
+| Page read (200p CBZ) | < 50 ms | 2.01 ms | ✅ 25× |
+| QuickLook first image (200p) | < 1 s | 1.72 ms | ✅ 580× |
+| Thumbnail parallel (200 entries) | < 3 s | 25.4 ms | ✅ 118× |
+| Memory peak (200p CBZ) | < 200 MB | ⏳ | Pending Instruments |
+
+### Benchmark Infrastructure
+- `sc-archive/benches/archive_bench.rs`: 50- and 200-page CBZ benchmarks
+- `sc-image/benches/image_bench.rs`: scale, compositor, cache, thumbnail (10/50/200)
+
+---
+
+## Phase 8: QuickLook 플러그인 (2026-06-02, Sprints 20-23)
+
+### Changed
+
+**`QuickComic/GenerateThumbnailForURL.m`** (legacy ObjC QuickLook API)
+- No-cover path: `sc_archive_read_first_image()` (partial-read, optimised)
+- Eliminates full `XADArchive` open for the common thumbnail case
+
+**`QuickComic/GeneratePreviewForURL.m`** (legacy ObjC QuickLook API)
+- `sc_archive_open_pages()` → sorted page list
+- `sc_archive_read_page()` per page; time-limit + cancel detection retained
+
+**`QuickComic Thumbnailer/ThumbnailProvider.swift`** (modern Swift QLThumbnailProvider)
+- No-cover path: `sc_archive_read_first_image()` C FFI
+- Named-cover path: `sc_archive_open_pages()` + name search + `sc_archive_read_page()`
+- Removed: `XADArchive`, `PartialArchiveParser` (XADMaster)
+
+**`QuickComic Preview/PreviewProvider.swift`** (modern Swift QLPreviewProvider)
+- Pre-fetch pattern: first 25 pages + last page read in `providePreview` async body
+- QLPreviewReply closure is I/O-free (no N+1 archive re-opens)
+- Fixed: page selection was `index >= 25` (showing last 75%) → `index < 25` (first 25 + last)
+
+**`QuickComicCommonSwift.swift`, `PartialArchiveParser.swift`**
+- XADMaster code removed; files retained as empty stubs to avoid Xcode project churn
+
+### Added
+
+**`SimpleComic.xcodeproj/project.pbxproj`**
+- `HEADER_SEARCH_PATHS`, `LIBRARY_SEARCH_PATHS`, `OTHER_LDFLAGS` added to six build
+  configurations (main app + QuickComic Thumbnailer + QuickComic Preview, Debug/Release)
+- Points to `SimpleComicCore/Sources/simplecomicFFI` (headers) and
+  `SimpleComicCore/Libraries` (pre-built `libsimplecomic.a`)
+
+---
+
+## Phase 7: OCR 통합 — Deferred (2026-06-02)
+
+Vision framework OCR extraction remains in Swift (`OCRFind.m`).
+The Rust search index (`aho-corasick` / `tantivy`) planned in PLAN.md Phase 7
+has not been connected. Text selection works via the existing Swift/Vision path.
+This phase is deferred to a future sprint.
 
 ---
 
