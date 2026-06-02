@@ -147,6 +147,10 @@ static NSSpeechSynthesizer *sSpeechSynthesizer;
 
 @property (weak, readwrite, nullable) NSView *view;
 
+/// Bounded queue for Vision OCR — prevents thread explosion when pages are flipped rapidly.
+/// maxConcurrentOperationCount = 2 (one per page slot in two-page spread).
+@property (nonatomic, strong) NSOperationQueue *ocrQueue;
+
 @end
 
 @implementation OCRTracker
@@ -202,6 +206,10 @@ static NSSpeechSynthesizer *sSpeechSynthesizer;
 			[[OCRDatum alloc] init],
 			[[OCRDatum alloc] init],
 		];
+		_ocrQueue = [[NSOperationQueue alloc] init];
+		_ocrQueue.name = @"io.github.hephaex.8views.ocr";
+		_ocrQueue.maxConcurrentOperationCount = 2;
+		_ocrQueue.qualityOfService = NSQualityOfServiceBackground;
 		NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 		[defaults addObserver:self forKeyPath:OCRDisableKey options:0 context:NULL];
 		sIsEnabled = ![defaults boolForKey:OCRDisableKey];
@@ -557,15 +565,20 @@ static NSSpeechSynthesizer *sSpeechSynthesizer;
 	[datum.selectionPieces removeAllObjects];
 	if (image)
 	{
-		__block OCRVision *ocrVision = [[OCRVision alloc] init];
+		OCRVision *ocrVision = [[OCRVision alloc] init];
 		datum.activeOCR = ocrVision;
 		__weak typeof(self) weakSelf = self;
-		dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
-			[ocrVision ocrImage:image completion:^(id<OCRVisionResults> _Nonnull complete) {
+		__weak OCRVision *weakVision = ocrVision;
+		NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
+			OCRVision *strongVision = weakVision;
+			if (!strongVision || strongVision != weakSelf.datums[index].activeOCR) {
+				return; // Stale: a newer request replaced this one.
+			}
+			[strongVision ocrImage:image completion:^(id<OCRVisionResults> _Nonnull complete) {
 				[weakSelf ocrDidFinish:complete image:image index:index];
-				ocrVision = nil;
 			}];
-		});
+		}];
+		[self.ocrQueue addOperation:op];
 	}
 }
 

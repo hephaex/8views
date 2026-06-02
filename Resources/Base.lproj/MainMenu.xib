@@ -223,6 +223,12 @@ CA
                                     <action selector="changeTwoPage:" target="-1" id="978"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Enable Live Text" tag="308" keyEquivalent="t" id="2910">
+                                <modifierMask key="keyEquivalentModifierMask" command="YES" shift="YES"/>
+                                <connections>
+                                    <action selector="toggleLiveText:" target="-1" id="2911"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Image Scaling" tag="304" id="984">
                                 <menu key="submenu" title="Image Scaling" id="985">
                                     <items>

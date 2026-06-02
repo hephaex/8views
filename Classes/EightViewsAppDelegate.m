@@ -800,6 +800,25 @@ static NSArray<NSNumber*> * allAvailableStringEncodings(void)
 	[NSApp stopModalWithCode: NSModalResponseCancel];
 }
 
+- (IBAction)toggleLiveText:(id)sender
+{
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+	BOOL disabled = [defaults boolForKey:OCRDisableKey];
+	[defaults setBool:!disabled forKey:OCRDisableKey];
+	[OCRTracker hideOCRMenusIfUnavailable];
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	if ([menuItem action] == @selector(toggleLiveText:)) {
+		NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+		BOOL enabled = ![defaults boolForKey:OCRDisableKey];
+		[menuItem setState:enabled ? NSControlStateValueOn : NSControlStateValueOff];
+		return YES;
+	}
+	return YES;
+}
+
 - (IBAction)openPreferences:(id)sender
 {
 	if(!preferences)

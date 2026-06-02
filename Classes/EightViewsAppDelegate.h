@@ -154,6 +154,9 @@ extern NSNotificationName const TSSTSessionEndNotification;
 /*! Kills the password and encoding modals if the Cancel button was clicked. */
 - (IBAction)modalCancel:(nullable id)sender;
 
+/*! Toggle Vision Live Text (OCR) on/off. Prevents thread exhaustion on rapid page navigation. */
+- (IBAction)toggleLiveText:(nullable id)sender;
+
 @end
 
 NS_ASSUME_NONNULL_END
