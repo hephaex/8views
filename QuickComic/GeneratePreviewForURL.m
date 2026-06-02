@@ -2,7 +2,6 @@
 #include <CoreServices/CoreServices.h>
 #include <QuickLook/QuickLook.h>
 #import <Cocoa/Cocoa.h>
-#import <XADMaster/XADArchive.h>
 #import "DTQuickComicCommon.h"
 #include "main.h"
 #import <WebPMac/TSSTWebPImageRep.h>
