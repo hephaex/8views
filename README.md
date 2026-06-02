@@ -26,7 +26,7 @@ GitHub collects data when you interact with the project here, but we can't chang
 
 The `arc` branch is an active refactoring to a **Rust core + Swift/ObjC UI** hybrid architecture.
 
-**Status: v2.0.0-alpha (2026-06-02) — Phases 1-6 + 8-9 complete**
+**Status: v2.0.0 (2026-06-02) — All phases complete**
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -38,9 +38,9 @@ The `arc` branch is an active refactoring to a **Rust core + Swift/ObjC UI** hyb
 | UI wiring (AppDelegate, SessionWindowController, PageView) | ✅ Rust | ObjC calls Rust |
 | QuickLook thumbnails + previews | ✅ Rust | Both ObjC and Swift extension APIs |
 | Performance (PLAN.md targets) | ✅ | All 4 measurable targets met |
-| OCR text search index | ⏳ Deferred | Vision stays in Swift |
-| Core Data → SQLite migration tool | ⏳ Phase 4 | Existing sessions not migrated |
-| Memory validation (Instruments) | ⏳ | Requires Xcode Instruments |
+| OCR text search index | ✅ Rust | FTS5 via `sc-storage`, `sc_ocr_search` C API + `OCRFind.searchAllCachedPages:` |
+| Core Data → SQLite migration tool | ✅ | `migrateCoreDateSessionsToRust` on first launch |
+| Memory validation | ⏳ Manual | Run Xcode → Product → Profile → Leaks on a 200-page CBZ |
 
 ### Building the Rust core
 

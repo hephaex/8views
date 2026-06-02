@@ -35,6 +35,13 @@ pub struct ThumbnailRecord {
     pub height: u32,
 }
 
+#[derive(Debug, Clone)]
+pub struct OcrSearchResult {
+    pub archive_path: String,
+    pub page_index: u32,
+    pub snippet: String,
+}
+
 // ── Error type (UDL `[Error] enum` mapping) ──────────────────────────────────
 // Flat enum: no associated data on any variant; uniffi exposes the Display
 // message as the Swift error description.
@@ -558,6 +565,111 @@ pub unsafe extern "C" fn sc_ocr_clear(archive_path: *const std::ffi::c_char) {
 
 pub fn sc_library_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+// ── OCR Search uniffi binding ─────────────────────────────────────────────────
+
+pub fn ocr_search(archive_path: &str, query: &str) -> Result<Vec<OcrSearchResult>, ScError> {
+    let cache = open_ocr_db()?;
+    let results = cache.search(archive_path, query).map_err(|_| ScError::Storage)?;
+    Ok(results
+        .into_iter()
+        .map(|r| OcrSearchResult {
+            archive_path: r.archive_path,
+            page_index: r.page_index,
+            snippet: r.snippet,
+        })
+        .collect())
+}
+
+// ── OCR Search C FFI ──────────────────────────────────────────────────────────
+
+/// C-compatible OCR search result. Caller must call `sc_ocr_search_result_free` on each element.
+#[repr(C)]
+pub struct ScOcrSearchResult {
+    /// Null-terminated UTF-8 archive path.  Caller must free via `sc_ocr_search_result_free`.
+    pub archive_path: *mut std::ffi::c_char,
+    /// Zero-based page index.
+    pub page_index: u32,
+    /// Null-terminated UTF-8 snippet.  Freed by `sc_ocr_search_result_free`.
+    pub snippet: *mut std::ffi::c_char,
+}
+
+/// Search the OCR cache for `query` within `archive_path`.
+///
+/// On success: writes the result count to `*out_count` and returns a heap-allocated
+/// array of `ScOcrSearchResult`.  The caller must call `sc_ocr_search_results_free`
+/// to release the array.
+///
+/// On failure or empty results: sets `*out_count` to 0 and returns NULL.
+///
+/// # Safety
+/// All pointer arguments must be valid NUL-terminated UTF-8 C strings or NULL.
+#[no_mangle]
+pub unsafe extern "C" fn sc_ocr_search(
+    archive_path: *const std::ffi::c_char,
+    query: *const std::ffi::c_char,
+    out_count: *mut u32,
+) -> *mut ScOcrSearchResult {
+    if !out_count.is_null() {
+        *out_count = 0;
+    }
+    let path_str = match archive_path.as_ref().and_then(|p| std::ffi::CStr::from_ptr(p).to_str().ok()) {
+        Some(s) => s,
+        None => return std::ptr::null_mut(),
+    };
+    let query_str = match query.as_ref().and_then(|q| std::ffi::CStr::from_ptr(q).to_str().ok()) {
+        Some(s) => s,
+        None => return std::ptr::null_mut(),
+    };
+    let cache = match open_ocr_db() {
+        Ok(c) => c,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let results = match cache.search(path_str, query_str) {
+        Ok(r) => r,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    if results.is_empty() {
+        return std::ptr::null_mut();
+    }
+    let count = results.len() as u32;
+    let mut c_results: Vec<ScOcrSearchResult> = results
+        .into_iter()
+        .map(|r| ScOcrSearchResult {
+            archive_path: std::ffi::CString::new(r.archive_path).unwrap_or_default().into_raw(),
+            page_index: r.page_index,
+            snippet: std::ffi::CString::new(r.snippet).unwrap_or_default().into_raw(),
+        })
+        .collect();
+    c_results.shrink_to_fit();
+    if !out_count.is_null() {
+        *out_count = count;
+    }
+    let ptr = c_results.as_mut_ptr();
+    std::mem::forget(c_results);
+    ptr
+}
+
+/// Free the array returned by `sc_ocr_search`.
+///
+/// # Safety
+/// `results` must have been returned by `sc_ocr_search` with `count` elements.
+#[no_mangle]
+pub unsafe extern "C" fn sc_ocr_search_results_free(results: *mut ScOcrSearchResult, count: u32) {
+    if results.is_null() {
+        return;
+    }
+    let slice = std::slice::from_raw_parts_mut(results, count as usize);
+    for r in slice.iter_mut() {
+        if !r.archive_path.is_null() {
+            drop(std::ffi::CString::from_raw(r.archive_path));
+        }
+        if !r.snippet.is_null() {
+            drop(std::ffi::CString::from_raw(r.snippet));
+        }
+    }
+    drop(Vec::from_raw_parts(results, count as usize, count as usize));
 }
 
 // ── Session C FFI ─────────────────────────────────────────────────────────────

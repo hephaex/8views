@@ -229,6 +229,39 @@ uint8_t * _Nullable sc_ocr_get(
 /// Remove all cached OCR text for archive_path. No-op if NULL.
 void sc_ocr_clear(const char * _Nullable archive_path);
 
+// ── OCR full-text search ───────────────────────────────────────────────────────
+
+/// One result from sc_ocr_search. Heap-allocated strings; released by sc_ocr_search_results_free.
+typedef struct {
+    char * _Nonnull archive_path;  ///< UTF-8 archive path. Freed by sc_ocr_search_results_free.
+    uint32_t page_index;           ///< Zero-based page index within the archive.
+    char * _Nonnull snippet;       ///< Context excerpt with matched terms in <b>…</b> tags.
+} ScOcrSearchResult;
+
+/// Search cached OCR text within archive_path using the FTS5 index.
+///
+/// query uses FTS5 simple-query syntax (case-insensitive, diacritics removed):
+///   "hero"       — single term
+///   "hero AND princess" — boolean AND
+///   "sword*"     — prefix search
+///   "\"sword fight\"" — phrase search
+///
+/// On success: writes the result count to *out_count and returns a heap-allocated
+/// ScOcrSearchResult array.  The caller must release it with sc_ocr_search_results_free.
+/// On failure or empty results: sets *out_count to 0 and returns NULL.
+///
+/// archive_path and query must be valid NUL-terminated UTF-8 C strings.
+/// out_count must be a valid non-null pointer.
+ScOcrSearchResult * _Nullable sc_ocr_search(
+    const char * _Nonnull archive_path,
+    const char * _Nonnull query,
+    uint32_t * _Nonnull out_count
+);
+
+/// Free the array returned by sc_ocr_search.
+/// Passing NULL is safe (no-op).
+void sc_ocr_search_results_free(ScOcrSearchResult * _Nullable results, uint32_t count);
+
 #ifdef __cplusplus
 }
 #endif

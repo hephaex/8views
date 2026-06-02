@@ -1,6 +1,28 @@
 # Changelog
 
-All notable changes to the 8views Rust core refactoring (`arc` branch).
+All notable changes to the 8views Rust core refactoring.
+
+---
+
+## [2.0.0] — 2026-06-02
+
+### Added
+
+- **OCR full-text search index** (`sc-storage`): SQLite FTS5 virtual table `ocr_fts` with
+  automatic sync triggers.  `OcrCache::search(archive_path, query)` searches cached pages
+  within one archive; `search_all(query)` spans all archives.  Unicode61 tokenizer with
+  diacritic removal for case-insensitive matching.
+- **`sc_ocr_search` C API** (`sc_extras.h`): returns a heap-allocated `ScOcrSearchResult[]`
+  with page index and `snippet()` excerpt.  Caller releases with `sc_ocr_search_results_free`.
+- **`OCRFind.searchAllCachedPages:completion:`**: ObjC entry point that dispatches to the
+  Rust FTS5 search off the main thread, returns `OCRSearchPageResult[]` on the main queue.
+- Complete rebrand from Simple Comic → 8views (directory names, bundle IDs, UTI strings,
+  class names, Rust library name).
+
+### Completed
+
+- Core Data → SQLite migration tool: `migrateCoreDateSessionsToRust` (present since alpha,
+  now marked complete — runs once on first launch, guarded by `NSUserDefaults`).
 
 ---
 

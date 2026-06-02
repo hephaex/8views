@@ -75,6 +75,32 @@ const SCHEMA_V4: &str = "
 ALTER TABLE ocr_cache ADD COLUMN archive_mtime INTEGER NOT NULL DEFAULT 0;
 ";
 
+/// FTS5 full-text search index over ocr_cache.text_data.
+///
+/// External-content table: no data duplication; triggers keep it in sync.
+/// Tokenizer: unicode61 with diacritic removal for case-insensitive search.
+const SCHEMA_V5: &str = "
+CREATE VIRTUAL TABLE IF NOT EXISTS ocr_fts USING fts5(
+    text_data,
+    content=ocr_cache,
+    content_rowid=id,
+    tokenize='unicode61 remove_diacritics 1'
+);
+
+CREATE TRIGGER IF NOT EXISTS ocr_fts_ai AFTER INSERT ON ocr_cache BEGIN
+    INSERT INTO ocr_fts(rowid, text_data) VALUES (new.id, new.text_data);
+END;
+
+CREATE TRIGGER IF NOT EXISTS ocr_fts_ad AFTER DELETE ON ocr_cache BEGIN
+    INSERT INTO ocr_fts(ocr_fts, rowid, text_data) VALUES ('delete', old.id, old.text_data);
+END;
+
+CREATE TRIGGER IF NOT EXISTS ocr_fts_au AFTER UPDATE ON ocr_cache BEGIN
+    INSERT INTO ocr_fts(ocr_fts, rowid, text_data) VALUES ('delete', old.id, old.text_data);
+    INSERT INTO ocr_fts(rowid, text_data) VALUES (new.id, new.text_data);
+END;
+";
+
 pub fn run_migrations(conn: &Connection) -> Result<()> {
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
     conn.execute_batch(SCHEMA_V1)?;
@@ -82,5 +108,7 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     conn.execute_batch(SCHEMA_V3)?;
     // V4: ADD COLUMN — silently skip if the column already exists.
     let _ = conn.execute_batch(SCHEMA_V4);
+    // V5: FTS5 search index — silently skip if already present.
+    let _ = conn.execute_batch(SCHEMA_V5);
     Ok(())
 }

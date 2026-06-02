@@ -10,6 +10,9 @@
 #import <Vision/Vision.h>
 #import "sc_extras.h"
 
+@implementation OCRSearchPageResult
+@end
+
 // Use same keys as NSTextFinder.
 static NSString *const OCRIgnoreCaseKey = @"canIgnoreCase";
 static NSString *const OCRWrapAroundKey = @"canWrapAround";
@@ -446,6 +449,30 @@ anchorRanges:(NSArray<NSValue *> *)anchorRanges
 		default:
 			return NO;
 	}
+}
+
+- (void)searchAllCachedPages:(NSString *)query
+                  completion:(void (^)(NSArray<OCRSearchPageResult *> *results))completion
+{
+	if (!completion) return;
+	NSString *archivePath = self.delegate.rustSessionArchivePath;
+	if (!archivePath || query.length == 0) {
+		dispatch_async(dispatch_get_main_queue(), ^{ completion(@[]); });
+		return;
+	}
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		uint32_t count = 0;
+		ScOcrSearchResult *raw = sc_ocr_search(archivePath.UTF8String, query.UTF8String, &count);
+		NSMutableArray<OCRSearchPageResult *> *results = [NSMutableArray arrayWithCapacity:count];
+		for (uint32_t i = 0; i < count; i++) {
+			OCRSearchPageResult *r = [[OCRSearchPageResult alloc] init];
+			r.pageIndex = (NSInteger)raw[i].page_index;
+			r.snippet = raw[i].snippet ? @(raw[i].snippet) : @"";
+			[results addObject:r];
+		}
+		sc_ocr_search_results_free(raw, count);
+		dispatch_async(dispatch_get_main_queue(), ^{ completion([results copy]); });
+	});
 }
 
 @end

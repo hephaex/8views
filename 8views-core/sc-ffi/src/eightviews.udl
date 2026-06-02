@@ -94,6 +94,26 @@ namespace eightviews {
         u32 thumb_size
     );
 
+    // ── OCR Search API ───────────────────────────────────────────────────────
+    //
+    // Full-text search over the OCR text cache via a SQLite FTS5 index.
+    // Only pages that have been previously OCR'd and cached are searched.
+    //
+    // Query syntax: FTS5 simple query syntax (phrase search, prefix search,
+    // boolean AND/OR/NOT, column filters).  Case-insensitive; diacritics removed.
+    //
+    // Example queries: "dragon", "hero AND princess", "sword fight*"
+
+    /// Search cached OCR text within a single archive.
+    ///
+    /// Results are ordered by page index.  Returns an empty list for empty queries
+    /// or archives with no cached OCR data.
+    [Throws=ScError]
+    sequence<OcrSearchResult> ocr_search(
+        [ByRef] string archive_path,
+        [ByRef] string query
+    );
+
     // ── Utility ─────────────────────────────────────────────────────────────
 
     /// Return the library version string (SemVer, e.g. "0.1.0").
@@ -176,6 +196,17 @@ enum ScError {
     "Io",
     "UnsupportedFormat",
     "EntryNotFound",
+};
+
+// ── OCR search result ────────────────────────────────────────────────────────
+
+dictionary OcrSearchResult {
+    /// Path to the archive that contains the matching page.
+    string archive_path;
+    /// Zero-based index of the matching page within the archive.
+    u32 page_index;
+    /// Short excerpt with surrounding context; matched terms wrapped in <b>…</b>.
+    string snippet;
 };
 
 // ── Thumbnail result ──────────────────────────────────────────────────────────

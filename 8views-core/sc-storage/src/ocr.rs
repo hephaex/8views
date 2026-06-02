@@ -3,6 +3,17 @@ use rusqlite::Connection;
 
 use crate::migration::run_migrations;
 
+/// A single result from an FTS5 full-text search of the OCR cache.
+#[derive(Debug, Clone)]
+pub struct OcrSearchResult {
+    /// Path to the archive that contains the matching page.
+    pub archive_path: String,
+    /// Zero-based index of the page within the archive.
+    pub page_index: u32,
+    /// Short excerpt of the matched text with surrounding context.
+    pub snippet: String,
+}
+
 /// OCR text cache: stores Vision-recognised text per page so subsequent searches
 /// skip Vision inference and query the SQLite store instead.
 pub struct OcrCache {
@@ -100,6 +111,64 @@ impl OcrCache {
             rusqlite::params![archive_path],
         );
     }
+
+    /// Full-text search within a single archive using the FTS5 index.
+    ///
+    /// Returns results ordered by page index.  Empty query returns empty vec.
+    /// Only pages that have been OCR'd and cached are searched.
+    pub fn search(&self, archive_path: &str, query: &str) -> Result<Vec<OcrSearchResult>> {
+        if query.trim().is_empty() {
+            return Ok(vec![]);
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT c.archive_path, c.page_index,
+                    snippet(ocr_fts, 0, '<b>', '</b>', '…', 20)
+             FROM ocr_fts
+             JOIN ocr_cache c ON c.id = ocr_fts.rowid
+             WHERE ocr_fts MATCH ?1
+               AND c.archive_path = ?2
+               AND c.text_data != ''
+             ORDER BY c.page_index",
+        )?;
+        let results = stmt.query_map(rusqlite::params![query, archive_path], |row| {
+            Ok(OcrSearchResult {
+                archive_path: row.get(0)?,
+                page_index: row.get(1)?,
+                snippet: row.get(2)?,
+            })
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+        Ok(results)
+    }
+
+    /// Full-text search across all cached archives using the FTS5 index.
+    ///
+    /// Returns results ordered by archive path then page index.
+    pub fn search_all(&self, query: &str) -> Result<Vec<OcrSearchResult>> {
+        if query.trim().is_empty() {
+            return Ok(vec![]);
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT c.archive_path, c.page_index,
+                    snippet(ocr_fts, 0, '<b>', '</b>', '…', 20)
+             FROM ocr_fts
+             JOIN ocr_cache c ON c.id = ocr_fts.rowid
+             WHERE ocr_fts MATCH ?1
+               AND c.text_data != ''
+             ORDER BY c.archive_path, c.page_index",
+        )?;
+        let results = stmt.query_map(rusqlite::params![query], |row| {
+            Ok(OcrSearchResult {
+                archive_path: row.get(0)?,
+                page_index: row.get(1)?,
+                snippet: row.get(2)?,
+            })
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+        Ok(results)
+    }
 }
 
 #[cfg(test)]
@@ -153,5 +222,61 @@ mod tests {
         cache.store("/test.cbz", 0, "second", MTIME + 1).unwrap();
         assert_eq!(cache.get("/test.cbz", 0).unwrap(), "second");
         assert!(cache.has_valid("/test.cbz", 0, MTIME + 1));
+    }
+
+    #[test]
+    fn search_finds_word_in_archive() {
+        let cache = OcrCache::open_in_memory().unwrap();
+        cache.store("/comic.cbz", 0, "The hero defeated the dragon", MTIME).unwrap();
+        cache.store("/comic.cbz", 1, "The princess was rescued", MTIME).unwrap();
+        cache.store("/comic.cbz", 2, "They lived happily", MTIME).unwrap();
+        let results = cache.search("/comic.cbz", "princess").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].page_index, 1);
+    }
+
+    #[test]
+    fn search_is_case_insensitive() {
+        let cache = OcrCache::open_in_memory().unwrap();
+        cache.store("/comic.cbz", 0, "The Hero defeated the DRAGON", MTIME).unwrap();
+        let results = cache.search("/comic.cbz", "hero").unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn search_empty_query_returns_empty() {
+        let cache = OcrCache::open_in_memory().unwrap();
+        cache.store("/comic.cbz", 0, "text here", MTIME).unwrap();
+        assert!(cache.search("/comic.cbz", "").unwrap().is_empty());
+        assert!(cache.search("/comic.cbz", "   ").unwrap().is_empty());
+    }
+
+    #[test]
+    fn search_skips_sentinel_empty_pages() {
+        let cache = OcrCache::open_in_memory().unwrap();
+        cache.store("/comic.cbz", 0, "", MTIME).unwrap(); // sentinel — no text
+        cache.store("/comic.cbz", 1, "visible text", MTIME).unwrap();
+        let results = cache.search_all("text").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].page_index, 1);
+    }
+
+    #[test]
+    fn search_all_finds_across_archives() {
+        let cache = OcrCache::open_in_memory().unwrap();
+        cache.store("/vol1.cbz", 0, "A dragon appears", MTIME).unwrap();
+        cache.store("/vol2.cbz", 3, "The dragon returns", MTIME).unwrap();
+        let results = cache.search_all("dragon").unwrap();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn search_scoped_to_archive() {
+        let cache = OcrCache::open_in_memory().unwrap();
+        cache.store("/vol1.cbz", 0, "sword fight", MTIME).unwrap();
+        cache.store("/vol2.cbz", 0, "sword fight", MTIME).unwrap();
+        let results = cache.search("/vol1.cbz", "sword").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].archive_path, "/vol1.cbz");
     }
 }

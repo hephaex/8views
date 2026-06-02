@@ -13,6 +13,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol OCRFindDelegate;
 
+/// Result of a cross-page OCR search via the Rust FTS5 index.
+@interface OCRSearchPageResult : NSObject
+/// Zero-based page index within the archive.
+@property(nonatomic) NSInteger pageIndex;
+/// Short excerpt with matched terms wrapped in HTML <b>…</b> tags.
+@property(nonatomic, copy) NSString *snippet;
+@end
+
 /// Does the actual finding. The controller of this owns this. This implements the OCRFindEngine protocol.
 @interface OCRFind : NSObject
 
@@ -24,6 +32,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Perform an menu item on the Find submenu,
 - (BOOL)validateAction:(NSTextFinderAction)op;
+
+/// Search all OCR-cached pages in the current archive for query using the Rust FTS5 index.
+///
+/// Only pages that have previously been OCR'd and cached are searched; pages
+/// not yet indexed return no results for those pages.  Results are sorted by
+/// page index.  Calls completion on the main queue.
+- (void)searchAllCachedPages:(NSString *)query
+                  completion:(void (^)(NSArray<OCRSearchPageResult *> *results))completion;
 
 @end
 
