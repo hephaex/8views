@@ -6,6 +6,7 @@
 #import "DTQuickComicCommon.h"
 #include "main.h"
 #import <WebPMac/TSSTWebPImageRep.h>
+#import "sc_extras.h"
 
 /* -----------------------------------------------------------------------------
    Generate a preview for file
@@ -21,61 +22,71 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 			[NSImageRep registerImageRepClass:[TSSTWebPImageRep class]];
 		}
 
-		XADArchive * archive = [[XADArchive alloc] initWithFileURL: (__bridge NSURL *)url delegate: nil error: NULL];
-		NSMutableArray<NSDictionary<NSString*,id>*> * fileList = fileListForArchive(archive);
+		// Use Rust to enumerate pages (natural-sorted, no XADMaster needed).
+		NSString *archivePath = [(__bridge NSURL *)url path];
+		int32_t qlErr = 0;
+		ScPageList *pages = sc_archive_open_pages(archivePath.UTF8String, &qlErr);
 
 		if (QLPreviewRequestIsCancelled(preview)) {
+			sc_archive_pages_free(pages);
 			return kQLReturnNoError;
 		}
 
-		if([fileList count] > 0)
+		if (pages && sc_page_list_count(pages) > 0)
 		{
-			[fileList sortUsingDescriptors: fileSort()];
-			NSInteger index;
+			uint32_t count = sc_page_list_count(pages);
 			CGImageSourceRef pageSourceRef;
 			CGImageRef currentImage;
 			CGRect canvasRect;
-			// Preview will be drawn in a vectorized context
 			CGContextRef cgContext = QLPreviewRequestCreatePDFContext(preview, NULL, NULL, NULL);
 			if(cgContext)
 			{
-				NSInteger counter = 0;
-				NSInteger count = [fileList count];
-				//count = count < 20 ? count : 20;
-				NSDate * pageRenderStartTime = [NSDate date];
-				NSDate * currentTime = nil;
+				uint32_t counter = 0;
+				NSDate *pageRenderStartTime = [NSDate date];
+				NSDate *currentTime = nil;
 				do
 				{
-					index = [[fileList[counter] valueForKey: @"index"] integerValue];
-					NSData *fileData = [archive contentsOfEntry: index];;
+					size_t pageLen = 0;
+					int32_t pageErr = 0;
+					uint8_t *pageBytes = sc_archive_read_page(archivePath.UTF8String, counter, &pageLen, &pageErr);
+					if (!pageBytes) {
+						counter++;
+						continue;
+					}
+					NSData *fileData = [NSData dataWithBytes:pageBytes length:pageLen];
+					sc_free_bytes(pageBytes, pageLen);
+
 					pageSourceRef = CGImageSourceCreateWithData((CFDataRef)fileData, NULL);
 					if (!pageSourceRef) {
-						// If CoreGraphics failed, use NSImage
 						NSImage *img = [[NSImage alloc] initWithData:fileData];
 						NSData *imgData = img.TIFFRepresentation;
 						pageSourceRef = CGImageSourceCreateWithData((CFDataRef)imgData, NULL);
 					}
-					currentImage = CGImageSourceCreateImageAtIndex(pageSourceRef, 0, NULL);
-					canvasRect = CGRectMake(0, 0, CGImageGetWidth(currentImage), CGImageGetHeight(currentImage));
-					
-					CGContextBeginPage(cgContext, &canvasRect);
-					CGContextDrawImage(cgContext, canvasRect, currentImage);
-					CGContextEndPage(cgContext);
-					
-					CFRelease(currentImage);
-					CFRelease(pageSourceRef);
+					if (pageSourceRef) {
+						currentImage = CGImageSourceCreateImageAtIndex(pageSourceRef, 0, NULL);
+						if (currentImage) {
+							canvasRect = CGRectMake(0, 0, CGImageGetWidth(currentImage), CGImageGetHeight(currentImage));
+							CGContextBeginPage(cgContext, &canvasRect);
+							CGContextDrawImage(cgContext, canvasRect, currentImage);
+							CGContextEndPage(cgContext);
+							CFRelease(currentImage);
+						}
+						CFRelease(pageSourceRef);
+					}
 					currentTime = [NSDate date];
-					counter ++;
+					counter++;
 					if (QLPreviewRequestIsCancelled(preview)) {
 						CFRelease(cgContext);
+						sc_archive_pages_free(pages);
 						return kQLReturnNoError;
 					}
-				}while(1 > [currentTime timeIntervalSinceDate: pageRenderStartTime] && counter < count);
-				
+				} while(1 > [currentTime timeIntervalSinceDate: pageRenderStartTime] && counter < count);
+
 				QLPreviewRequestFlushContext(preview, cgContext);
 				CFRelease(cgContext);
 			}
 		}
+		sc_archive_pages_free(pages);
 		return noErr;
 	}
 }
