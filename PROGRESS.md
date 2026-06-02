@@ -598,6 +598,28 @@ ZIP/CBZ ✓ | TAR.GZ/BZ2/XZ ✓ | 7z ✓ | folder ✓ | RAR/CBR ✓ | magic byte
 - Sprint Completion Gate: 41커밋 → `origin/arc` push 시도
   - HTTPS 인증 필요 → `git push origin arc` 수동 실행 필요
 
+### Sprint 20 — Phase 8 시작: QuickLook Rust 부분 통합 (2026-06-02)
+
+| 항목 | 결과 |
+|------|------|
+| Rust tests | 전체 pass |
+| clippy | 경고 0 |
+| 커밋 | c5e07e8 |
+
+**완료:**
+- `sc_archive_read_first_image` C FFI: 첫 이미지만 읽는 최적화 경로
+- `GenerateThumbnailForURL.m`: XADArchive → `sc_archive_read_first_image`
+  - 덮개 이름 없는 경우(else 브랜치) Rust 교체
+  - DTPartialArchiveParser(덮개 이름 있는 경우) 유지
+- `libsimplecomic.a` universal 재빌드
+
+**Sprint Completion Gate: 스프린트 10개 연속 한계 도달 (Sprint 11-20)**
+**⚠ 다음 스프린트 실행 전 반드시 GitHub push 필요 ⚠**
+```
+git remote set-url origin git@github.com:MaddTheSane/Simple-Comic.git
+git push origin arc
+```
+
 ---
 
 *최종 업데이트: 2026-06-02*
