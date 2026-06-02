@@ -22,3 +22,7 @@ Store Assets
 # Rust build artifacts — rebuild with: cd 8views-core && cargo build --release
 EightViewsCore/Libraries/*.a
 8views-core/target/
+
+# Instruments trace files
+*.trace
+*.trace/

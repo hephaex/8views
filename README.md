@@ -40,7 +40,7 @@ The `arc` branch is an active refactoring to a **Rust core + Swift/ObjC UI** hyb
 | Performance (PLAN.md targets) | ✅ | All 4 measurable targets met |
 | OCR text search index | ✅ Rust | FTS5 via `sc-storage`, `sc_ocr_search` C API + `OCRFind.searchAllCachedPages:` |
 | Core Data → SQLite migration tool | ✅ | `migrateCoreDateSessionsToRust` on first launch |
-| Memory validation | ⏳ Manual | Run Xcode → Product → Profile → Leaks on a 200-page CBZ |
+| Memory validation | ✅ | Leaks: 0, RSS: 172 MB Release (target < 200 MB) |
 
 ### Building the Rust core
 
