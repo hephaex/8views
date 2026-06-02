@@ -8,6 +8,7 @@
 #import "TSSTImageUtilities.h"
 #import "DTPartialArchiveParser.h"
 #include "main.h"
+#import "sc_extras.h"
 #import <WebPMac/TSSTWebPImageRep.h>
 
 #ifdef NON_APPSTORE
@@ -53,16 +54,14 @@ OSStatus GenerateThumbnailForURL(void *thisInterface, QLThumbnailRequestRef thum
 		}
 		else
 		{
-			XADArchive * archive = [[XADArchive alloc] initWithFileURL: archiveURL delegate: nil error: NULL];
-			NSMutableArray * fileList = fileListForArchive(archive);
-			
-			if([fileList count] > 0)
-			{
-				[fileList sortUsingDescriptors: fileSort()];
-				coverName = [fileList.firstObject valueForKey: @"rawName"];
-				coverIndex = [[fileList.firstObject valueForKey: @"index"] integerValue];
-				[UKXattrMetadataStore setString: coverName forKey: SCQuickLookCoverName atPath: archivePath traverseLink: NO error: nil];
-				imageData = [archive contentsOfEntry: coverIndex];
+			// Use Rust partial-read path: reads only the first image entry,
+			// avoiding full archive decompression (faster for large archives).
+			size_t firstLen = 0;
+			int32_t firstErr = 0;
+			uint8_t *firstBytes = sc_archive_read_first_image(archivePath.UTF8String, &firstLen, &firstErr);
+			if (firstBytes) {
+				imageData = [NSData dataWithBytes:firstBytes length:firstLen]; // copy before free
+				sc_free_bytes(firstBytes, firstLen);
 			}
 		}
 	

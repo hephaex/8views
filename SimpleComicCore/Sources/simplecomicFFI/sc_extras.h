@@ -120,6 +120,24 @@ void sc_session_delete_c(const char * _Nullable archive_path);
 
 // ── Thumbnail ─────────────────────────────────────────────────────────────────
 
+/// Read the first image from the archive at archive_path using the optimised
+/// partial-read path (stops after the first image entry without decompressing
+/// the rest of the archive — suitable for QuickLook thumbnail generation).
+///
+/// On success: returns heap-allocated compressed image bytes (JPEG, PNG, …);
+/// writes byte count to *out_len; sets *error_code_out to 0.
+/// Caller releases with sc_free_bytes(ptr, *out_len).
+/// On failure: returns NULL; sets *error_code_out to 1.
+///
+/// archive_path must be a valid NUL-terminated UTF-8 C string.
+/// out_len must be a valid non-null pointer.
+/// error_code_out may be NULL.
+uint8_t * _Nullable sc_archive_read_first_image(
+    const char * _Nonnull archive_path,
+    size_t * _Nonnull out_len,
+    int32_t * _Nullable error_code_out
+);
+
 /// Cap image bytes to a maximum dimension using Rust Lanczos3 scaling.
 ///
 /// If max(width, height) > max_dim, scales down to max_dim (aspect-preserved).

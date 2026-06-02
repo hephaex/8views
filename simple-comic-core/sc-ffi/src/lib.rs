@@ -307,6 +307,47 @@ pub fn archive_read_first_image(archive_path: &str) -> Result<Vec<u8>, ScError> 
     sc_archive::read_first_image(std::path::Path::new(archive_path)).map_err(ScError::from)
 }
 
+/// C-callable: read the first image from the archive at `archive_path`.
+///
+/// Uses the optimised partial-read path — stops after the first image entry
+/// without decompressing the rest of the archive.
+/// On success: returns heap-allocated buffer, writes byte count to `*out_len`,
+/// sets `*error_code_out` to 0.  Caller releases with `sc_free_bytes`.
+/// On failure: returns NULL; sets `*error_code_out` to 1.
+///
+/// # Safety
+/// `archive_path` must be a valid NUL-terminated UTF-8 C string.
+/// `out_len` must be a valid non-null pointer.
+#[no_mangle]
+pub unsafe extern "C" fn sc_archive_read_first_image(
+    archive_path: *const std::ffi::c_char,
+    out_len: *mut usize,
+    error_code_out: *mut i32,
+) -> *mut u8 {
+    let set_err = |code: i32| {
+        if !error_code_out.is_null() {
+            *error_code_out = code;
+        }
+    };
+    if archive_path.is_null() || out_len.is_null() {
+        set_err(1);
+        return std::ptr::null_mut();
+    }
+    let path_str = match std::ffi::CStr::from_ptr(archive_path).to_str() {
+        Ok(s) => s,
+        Err(_) => { set_err(1); return std::ptr::null_mut(); }
+    };
+    match archive_read_first_image(path_str) {
+        Ok(bytes) => {
+            let boxed: Box<[u8]> = bytes.into_boxed_slice();
+            *out_len = boxed.len();
+            set_err(0);
+            Box::into_raw(boxed) as *mut u8
+        }
+        Err(_) => { set_err(1); std::ptr::null_mut() }
+    }
+}
+
 // ── Session namespace functions ───────────────────────────────────────────────
 
 /// Open the session database.
