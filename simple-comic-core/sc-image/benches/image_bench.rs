@@ -134,6 +134,25 @@ fn bench_thumbnail_parallel_50(c: &mut Criterion) {
     group.finish();
 }
 
+/// 200개 이미지의 썸네일을 병렬 생성 — PLAN.md 목표: < 3 s.
+fn bench_thumbnail_parallel_200(c: &mut Criterion) {
+    let entries = black_box(create_image_entries(200));
+    let spec = black_box(ThumbnailSpec::default());
+
+    let mut group = c.benchmark_group("thumbnail_parallel");
+
+    group.bench_function("parallel_200_entries", |b| {
+        b.iter(|| {
+            black_box(generate_thumbnails_sorted(
+                black_box(&entries),
+                black_box(spec),
+            ))
+        });
+    });
+
+    group.finish();
+}
+
 /// 50개 이미지의 썸네일을 순서대로(serial) 생성하고, 병렬 버전과 비교한다.
 /// 이 벤치마크는 rayon 파이프라인의 오버헤드를 측정한다.
 fn bench_thumbnail_serial_50_comparison(c: &mut Criterion) {
@@ -167,6 +186,7 @@ criterion_group!(
     bench_image_cache_insert_evict,
     bench_thumbnail_parallel_10,
     bench_thumbnail_parallel_50,
+    bench_thumbnail_parallel_200,
     bench_thumbnail_serial_50_comparison
 );
 criterion_main!(benches);

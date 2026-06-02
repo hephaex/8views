@@ -104,29 +104,65 @@ fn bench_is_image_entry(c: &mut Criterion) {
 }
 
 /// 50 페이지 CBZ 파일을 열고 엔트리 목록을 조회하는 성능을 측정한다.
-/// 각 반복에서 임시 CBZ를 생성하고 open_archive() 호출 후 entries().len()을 수행한다.
 fn bench_cbz_open_and_list_50pages(c: &mut Criterion) {
     c.bench_function("cbz_open_and_list_50pages", |b| {
         b.iter_with_setup(
             || make_temp_cbz(50),
             |cbz| {
-                let path = cbz.path();
-                let reader = sc_archive::open_archive(black_box(path)).unwrap();
+                let reader = sc_archive::open_archive(black_box(cbz.path())).unwrap();
                 black_box(reader.entries().len())
             },
         );
     });
 }
 
-/// 50 페이지 CBZ 파일에서 첫 번째 이미지를 읽는 성능을 측정한다.
-/// read_first_image()는 PartialReader를 사용하여 전체 아카이브를 열지 않으므로 빠를 것으로 예상된다.
+/// 200 페이지 CBZ 파일 open+list — PLAN.md 목표: < 500 ms.
+fn bench_cbz_open_and_list_200pages(c: &mut Criterion) {
+    c.bench_function("cbz_open_and_list_200pages", |b| {
+        b.iter_with_setup(
+            || make_temp_cbz(200),
+            |cbz| {
+                let reader = sc_archive::open_archive(black_box(cbz.path())).unwrap();
+                black_box(reader.entries().len())
+            },
+        );
+    });
+}
+
+/// 50 페이지 CBZ에서 첫 번째 이미지 읽기 — PartialReader 경로.
 fn bench_cbz_read_first_image_50pages(c: &mut Criterion) {
     c.bench_function("cbz_read_first_image_50pages", |b| {
         b.iter_with_setup(
             || make_temp_cbz(50),
             |cbz| {
-                let path = cbz.path();
-                let bytes = sc_archive::read_first_image(black_box(path)).unwrap();
+                let bytes = sc_archive::read_first_image(black_box(cbz.path())).unwrap();
+                black_box(bytes.len())
+            },
+        );
+    });
+}
+
+/// 200 페이지 CBZ에서 첫 번째 이미지 읽기 — QuickLook 썸네일 경로 (PLAN.md 목표: < 1 s).
+fn bench_cbz_read_first_image_200pages(c: &mut Criterion) {
+    c.bench_function("cbz_read_first_image_200pages", |b| {
+        b.iter_with_setup(
+            || make_temp_cbz(200),
+            |cbz| {
+                let bytes = sc_archive::read_first_image(black_box(cbz.path())).unwrap();
+                black_box(bytes.len())
+            },
+        );
+    });
+}
+
+/// 200 페이지 CBZ에서 한 페이지 읽기 — 페이지 전환 경로 (PLAN.md 목표: < 50 ms).
+fn bench_cbz_read_page_200pages(c: &mut Criterion) {
+    c.bench_function("cbz_read_page_200pages", |b| {
+        b.iter_with_setup(
+            || make_temp_cbz(200),
+            |cbz| {
+                let mut reader = sc_archive::open_archive(cbz.path()).unwrap();
+                let bytes = reader.read_entry(black_box(100)).unwrap();
                 black_box(bytes.len())
             },
         );
@@ -138,6 +174,9 @@ criterion_group!(
     bench_natural_sort,
     bench_is_image_entry,
     bench_cbz_open_and_list_50pages,
-    bench_cbz_read_first_image_50pages
+    bench_cbz_open_and_list_200pages,
+    bench_cbz_read_first_image_50pages,
+    bench_cbz_read_first_image_200pages,
+    bench_cbz_read_page_200pages,
 );
 criterion_main!(benches);
